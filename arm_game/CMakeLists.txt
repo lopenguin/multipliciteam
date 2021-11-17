@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(armGame)
+project(arm_game)
 
 ## Set the package dependencies: Find catkin macros/libraries and
 ## other required packages.

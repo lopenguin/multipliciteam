@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>armGame</name>
+  <name>arm_game</name>
   <version>0.0.0</version>
   <description>Code for 133a final project controlling a moving robotic arm</description>
 

@@ -1,8 +1,8 @@
 <launch>
   <!-- Define general parameters.  These can be overwritten by the
        roslaunch command line. -->
-  <arg name="model" default="$(find armGame)/urdf/kuka.urdf"/>
-  <arg name="cfg"   default="$(find armGame)/rviz/viewkuka.rviz"/>
+  <arg name="model" default="$(find arm_game)/urdf/kuka.urdf"/>
+  <arg name="cfg"   default="$(find arm_game)/rviz/viewkuka.rviz"/>
 
 
   <!-- Load the URDF file into the robot_description parameter. -->
@@ -10,7 +10,7 @@
 
 
   <!-- Start any python code.  -->
-  <!-- <node pkg ="armGame"
+  <!-- <node pkg ="arm_game"
 	type="yummm.py"
 	name="yummy"
 	output="screen">
