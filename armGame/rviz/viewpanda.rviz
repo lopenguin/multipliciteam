@@ -158,7 +158,7 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-        world:
+        panda_link0:
           Alpha: 1
           Show Axes: false
           Show Trail: false
@@ -213,7 +213,7 @@ Visualization Manager:
           Value: true
         tip:
           Value: true
-        world:
+        panda_link0:
           Value: true
       Marker Alpha: 1
       Marker Scale: 0.5
@@ -264,7 +264,7 @@ Visualization Manager:
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: world
+    Fixed Frame: panda_link0
     Frame Rate: 5
   Name: root
   Tools:
