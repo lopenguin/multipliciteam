@@ -116,7 +116,6 @@ class AsteroidHandler:
         except rospy.ServiceException as e:
             rospy.loginfo("Get Model State service call failed:  {0}".format(e))
 
-
 #
 #  Main Code, used if script is run standalone
 #  Contains a few testing functions
@@ -140,5 +139,3 @@ if __name__ == "__main__":
 
     print(AH.generate_asteroid_random(0.0, 0.0, 5.0, 1.0))
     print(AH.generate_asteroid_gaussian(0.0, 0.0, 5.0, 1.0))
-
-

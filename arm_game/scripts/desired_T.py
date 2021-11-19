@@ -5,18 +5,39 @@ Gives a position, orientation, and time to intercept an asteroid.
 '''
 import numpy as np
 from kinematics import T_from_Rp
+from asteroid_generator import AsteroidHandler
 
-# placeholder ball class: generates a ball that moves at constant velocity
+import rospy
+import rospkg
+from gazebo_msgs.srv import GetPhysicsProperties
+
+# interface class to handle asteroids.
 class Ball:
-    def __init__(self, p0, v0):
-        self.p0 = p0;
-        self.v0 = v0;
+    # input the get_asteroid_state() output from our asteroid
+    def __init__(self, asteroid, start_t):
+        self.update_asteroid(asteroid, t);
 
-    def get_p(t):
-        return self.p0 + t*self.v0;
+    def update_asteroid(self, new_asteroid, new_t):
+        self.asteroid = new_asteroid;
+        self.start_t = new_t;
 
-    def get_v(t):
-        return self.v0;
+        self.p0 = np.array([asteroid.pose.position.x, asteroid.position.y, \
+                            asteroid.positon.z]).reshape([1,3]);
+        self.v0 = np.array([asteroid.twist.linear.x, asteroid.twist.linear.y, \
+                            asteroid.twist.linear.z]).reshape([1,3]);
+
+        # grav = rospy.ServiceProxy('/gazebo/get_physics_properties', GetPhysicsProperties);
+        self.grav = np.array([0, 0, -9.8]).reshape([1,3])
+
+    def get_p(self, t):
+        dt = t - self.start_t;
+
+        p = self.p0 + self.v0*dt + 0.5*self.grav*dt*dt;
+        return p;
+
+    def get_v(self, t):
+        v = self.v0 + self.grav*dt;
+        return v;
 
 
 
@@ -31,6 +52,10 @@ class Catch:
         self.good_p = np.array();  # ball pos
         self.good_t = np.array();  # time of position
 
+        self.setup_catch_pos();
+
+    def update_ball(self, new_ball):
+        self.ball = new_ball;
         self.setup_catch_pos();
 
     def setup_catch_pos(self):
