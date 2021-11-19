@@ -22,9 +22,9 @@ class AsteroidHandler:
         self.asteroid_ID_list = []  # Stores the currently existing asteroid IDs
 
         # Set asteroid model path from package directory
-        self.rospack = rospkg.RosPack()
-        self.package_path = self.rospack.get_path('arm_game')
-        self.asteroid_model_path = self.package_path + "/meshes/RoboCup 3D Simulation Ball/model.sdf"
+        rospack = rospkg.RosPack()
+        package_path = rospack.get_path('arm_game')
+        self.asteroid_model_path = package_path + "/meshes/RoboCup 3D Simulation Ball/model.sdf"
 
     def generate_asteroid(self, x, y, z):
         """
@@ -91,25 +91,34 @@ class AsteroidHandler:
         except rospy.ServiceException as e:
             print("Delete Model service call failed: {0}".format(e))
 
-    def get_asteroid_position(self, ID):
+    def get_asteroid_state(self, ID):
         """
-        Get the position coordinates of a specific asteroid
+        Get the position and velocity components of a specific asteroid
         @param ID: ID of an asteroid to retrieve position for
-        @return: Position class. Retrieve coordinates via: Position.x, Position.y, Position.z
+        @return: State Object. To retrieve position and velocity components, use the following calls to the object:
+
+        Position (X,Y,Z):
+            state.pose.position.x, state.pose.position.y, state.pose.position.z
+        Orientation (Quaternion):
+            state.pose.orientation.x, state.pose.orientation.y, state.pose.orientation.z, state.pose.orientation.w
+        Linear Velocity (X, Y, Z):
+            state.twist.linear.x, state.twist.linear.y, state.twist.linear.z
+        Angular Velocity (X, Y, Z):
+            state.twist.angular.x, state.twist.angular.y, state.twist.angular.z
         """
         try:
             model_coordinates = rospy.ServiceProxy('/gazebo/get_model_state', GetModelState)
             # for block in self._blockListDict.itervalues():
             asteroid_name = "asteroid" + str(ID)
             resp_coordinates = model_coordinates(asteroid_name, "")  # Retrieve coordinates of asteroid in global frame
+            return resp_coordinates
 
-            return resp_coordinates.pose.position
         except rospy.ServiceException as e:
             rospy.loginfo("Get Model State service call failed:  {0}".format(e))
 
 
 #
-#  Main Code, used if function is run standalone
+#  Main Code, used if script is run standalone
 #  Contains a few testing functions
 #
 if __name__ == "__main__":
@@ -122,10 +131,8 @@ if __name__ == "__main__":
     print(AH.generate_asteroid(1.0, 1.0, 1.0))
     print('\n')
 
-    pos = AH.get_asteroid_position(1)
-    print("Position X: " + str(pos.x))
-    print("Position Y: " + str(pos.y))
-    print("Position Z: " + str(pos.z))
+    state = AH.get_asteroid_state(1)
+    print("Asteroid state: " + str(state))
     print('\n')
 
     print(AH.delete_asteroid(1))
