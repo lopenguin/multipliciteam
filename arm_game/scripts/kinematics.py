@@ -180,7 +180,7 @@ class Kinematics:
                 # Just append the fixed transform
                 T = T @ T_from_URDF_origin(joint.origin)
                 
-            elif (joint.type == 'continuous'):
+            elif (joint.type == 'revolute'):
                 # First append the fixed transform, then rotating
                 # transform.  The joint angle comes from theta-vector.
                 T = T @ T_from_URDF_origin(joint.origin)

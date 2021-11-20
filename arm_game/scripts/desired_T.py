@@ -15,16 +15,16 @@ from gazebo_msgs.srv import GetPhysicsProperties
 class Ball:
     # input the get_asteroid_state() output from our asteroid
     def __init__(self, asteroid, start_t):
-        self.update_asteroid(asteroid, t);
+        self.update_asteroid(asteroid, start_t);
 
     def update_asteroid(self, new_asteroid, new_t):
         self.asteroid = new_asteroid;
         self.start_t = new_t;
 
-        self.p0 = np.array([asteroid.pose.position.x, asteroid.position.y, \
-                            asteroid.positon.z]).reshape([1,3]);
-        self.v0 = np.array([asteroid.twist.linear.x, asteroid.twist.linear.y, \
-                            asteroid.twist.linear.z]).reshape([1,3]);
+        self.p0 = np.array([self.asteroid.pose.position.x, self.asteroid.position.y, \
+                            self.asteroid.positon.z]).reshape([1,3]);
+        self.v0 = np.array([self.asteroid.twist.linear.x, self.asteroid.twist.linear.y, \
+                            self.asteroid.twist.linear.z]).reshape([1,3]);
 
         # grav = rospy.ServiceProxy('/gazebo/get_physics_properties', GetPhysicsProperties);
         self.grav = np.array([0, 0, -9.8]).reshape([1,3])

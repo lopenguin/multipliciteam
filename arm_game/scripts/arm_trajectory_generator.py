@@ -14,7 +14,8 @@ import numpy as np
 
 from sensor_msgs.msg     import JointState
 from urdf_parser_py.urdf import Robot
-from desired_t           import Catch
+from desired_T           import Catch, Ball
+from asteroid_generator  import AsteroidHandler
 
 # Import the kinematics stuff:
 from kinematics import Kinematics, p_from_T, R_from_T, Rx, Ry, Rz
@@ -36,17 +37,30 @@ class Generator:
         # we don't start sending messages until someone is listening.
         self.pub = rospy.Publisher("/joint_states", JointState, queue_size=10)
         rospy.sleep(0.25)
+        
 
         # Grab the robot's URDF from the parameter server.
         robot = Robot.from_parameter_server()
-
-        # Instantiate the Kinematics
-        self.kin = Kinematics(robot, 'world', 'tip')
 
         # Initialize the storage of the last joint values (column vector). 
         # The joints are generally centered at 0 radians.
         self.lasttheta = \
             np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape((-1,1))
+
+        # Instantiate the Kinematics
+        self.kin = Kinematics(robot, 'world', 'tool0')
+
+        # Find arm length at t = 0, with all angles zero
+        (T0, J0) = self.kin.fkin(self.lasttheta)
+        arm_length = np.linalg.norm(p_from_T(T0))
+
+        # Instantiate asteroid handler, ball, and catcher
+        # TODO have Catch instantiate the ball and asteroid
+        # TODO have an interface class that handles the generation of the asteroid in AsteroidHandler
+        self.asteroid= AsteroidHandler()
+        self.asteroid.generate_asteroid(0.0, 0.0, 5.0)
+        self.ball    = Ball(self.asteroid.get_asteroid_state(1), 0)
+        self.catcher = Catch(self.ball, arm_length, 0)
 
         # Create point to hold start/end position of each motion (prev goal and new goal)
         self.p_start = self.lasttheta 
@@ -63,7 +77,8 @@ class Generator:
         self.index = 0
         self.t0    = 0.0
 
-        self.get_next_target() # Updates segments, p_start, and p_end
+        self.get_next_target(0) # Updates segments, p_start, and p_end based on
+                                # t = 0
 
         
 
@@ -173,8 +188,7 @@ class Generator:
         thetadot2 = - 10.0 * (theta - center)
 
         # Calculate weighted pseudo-inverse of Jacobian to avoid singularities
-        Jpinv    = np.transpose(J) @ 
-                   np.linalg.inv(J @ np.transpose(J) + self.gamma ** 2 * np.eye(6))
+        Jpinv    = np.transpose(J) @ np.linalg.inv(J @ np.transpose(J) + self.gamma ** 2 * np.eye(6))
         thetadot = thetadot2 + Jpinv @ (xrdot - J@thetadot2)
 
         # Take a step, using Euler integration to advance the joints.
