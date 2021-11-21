@@ -32,7 +32,7 @@ class AsteroidHandler:
         @param x: X coordinate of asteroid
         @param y: Y coordinate of asteroid
         @param z: Z coordinate of asteroid
-        @return: bool success, string status_message
+        @return: spawn_model_client, int asteroid id
         """
         # Add an asteroid to the asteroid list with a unique ID
         self.num_asteroids_generated += 1
@@ -41,13 +41,13 @@ class AsteroidHandler:
         try:
             # Spawn the asteroid in Gazebo at the specified point
             spawn_model_client = rospy.ServiceProxy('/gazebo/spawn_sdf_model', SpawnModel)
-            return spawn_model_client(
+            return (spawn_model_client(
                 model_name='asteroid' + str(self.num_asteroids_generated),
                 model_xml=open(self.asteroid_model_path, 'r').read(),
                 robot_namespace='/asteroids',
                 initial_pose=Pose(position=Point(x, y, z), orientation=Quaternion(0, 0, 0, 0)),
                 reference_frame='world'
-            )
+            ), self.num_asteroids_generated)
         except rospy.ServiceException as e:
             print("Spawn Model service call failed: {0}".format(e))
 
@@ -116,6 +116,100 @@ class AsteroidHandler:
         except rospy.ServiceException as e:
             rospy.loginfo("Get Model State service call failed:  {0}".format(e))
 
+    def get_asteroid_position(self, ID):
+        """
+        Returns position in a nice form.
+        """
+        state = self.get_asteroid_state(ID)
+        px = state.pose.position.x;
+        py = state.pose.position.y;
+        pz = state.pose.position.z;
+        return np.array([px, py, pz]).reshape([3,1]);
+
+    def get_asteroid_velocity(self, ID):
+        """
+        Returns velocity in a nice form.
+        """
+        state = self.get_asteroid_state(ID);
+        vx = state.twist.linear.x;
+        vy = state.twist.linear.y;
+        vz = state.twist.linear.z;
+        return np.array([vx, vy, vz]).reshape([3,1]);
+
+class Asteroid:
+    '''
+    Asteroid is an interface class that holds a single asteroid and computes
+    part of its trajectory. The class creates an asteroid at random and deletes
+    it upon cleanup.
+
+    Key functions:
+    __init__()
+    get_intercept_positions()
+    '''
+
+    '''
+    Init: use an external handler and create a random asteroid from it.
+    @param handler: AsteroidHandler object (shared between asteroids).
+    @param workspace_radius: radius of workspace "sphere" approx. (float).
+    @param t_start: time of asteroid creation (float). Does NOT determine when
+                    asteroid created.
+    '''
+    def __init__(self, handler, workspace_radius, t_start):
+        self.handler = handler
+        # for now, just generate one at random. Save its ID.
+        s, self.id = self.handler.generate_asteroid_random(0.0, 0.0, 5.0, 1.0)
+
+        self.workspace_radius = workspace_radius
+
+        # save key trajectory points
+        self.t_start = t_start
+        self.p0 = self.handler.get_asteroid_position(self.id);
+        self.v0 = self.handler.get_asteroid_velocity(self.id);
+        self.grav = np.array([0, 0, -9.8]).reshape([3,1]);      # TODO: FIX THIS TERM SO GRAVITY IS PULLED FROM GAZEBO
+
+        # get intercept positions
+        times = np.linspace(t_start, t_start + 10.0, num=1001)
+        pos = self.get_position(times)
+        posZ = pos[2]
+        good_mask = np.where((posZ <  self.workspace_radius) & \
+                            (posZ > -self.workspace_radius))
+        good_times = times[good_mask]
+        self.intercept_times = good_times
+
+    '''
+    Returns set of intercept times past t_current.
+    '''
+    def get_intercept_times(self, t_current):
+        dt = t_current - self.t_start
+        return self.intercept_times[self.intercept_times > dt]
+
+    '''
+    Calculates asteroid position at any time by extrapolating from constant
+    acceleration kinematics.
+    '''
+    def get_position(self, t):
+        dt = t - self.t_start;
+
+        p = self.p0 + self.v0*dt + 0.5*self.grav*dt*dt;
+        return p;
+
+    '''
+    Calculates asteroid velocity at any time by extrapolating from constant
+    acceleration kinematics.
+    '''
+    def get_velocity(self, t):
+        dt = t - self.t_start;
+
+        v = self.v0 + self.grav*dt;
+        return v;
+
+    '''
+    Deletes asteroid when object is destroyed.
+    '''
+    def remove(self):
+        self.handler.delete_asteroid(self.id)
+
+
 #
 #  Main Code, used if script is run standalone
 #  Contains a few testing functions
@@ -139,3 +233,8 @@ if __name__ == "__main__":
 
     print(AH.generate_asteroid_random(0.0, 0.0, 5.0, 1.0))
     print(AH.generate_asteroid_gaussian(0.0, 0.0, 5.0, 1.0))
+
+    print("-----")
+    # using Asteroid:
+    asteroid = Asteroid(AH, 1.0, 0.0)
+    asteroid.remove()
