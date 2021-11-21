@@ -36,6 +36,8 @@ class Ball:
         return p;
 
     def get_v(self, t):
+        dt = t - self.start_t;
+        
         v = self.v0 + self.grav*dt;
         return v;
 
