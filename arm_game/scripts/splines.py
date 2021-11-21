@@ -86,7 +86,30 @@ class Hold(Goto):
 class Stay(Hold):
     # Use an infinite time (stay forever).
     def __init__(self, p, space='Joint'):
-        Hold.__init__(self, p, math.inf, space)
+        Hold.__init__(self, p, math.inf, space);
+
+'''
+Returns a spline that gets from p0 to v0 in the minimum amount of time without
+exceeding velocity and acceleration limits ("safe").
+TODO: FIX - Lorenzo (")>
+'''
+class SafeCubicSpline(CubicSpline):
+    def __init__(self, p0, v0, pf, vf, vmax, amax, space='Joint'):
+        # Use equation for cubic spline to find vmax, amax
+        # Find times that give vmax, amax
+        # Pick largest time, if fail gives T = -1
+        if (abs(v0) > vmax or abs(vf) > vmax):
+            T = -1
+        else:
+            t_range = np.linspace(0.1, 5.0, 500)
+            vmax_range = v0 - \
+                        (3*(pf-p0)/(t_range*t_range)-(vf+2*v0)/t_range)**2 / \
+                        (3*(-2*(pf-p0)/t_range**3 + (vf+v0)/(t_range*t_range)))
+            good_t = t_range[np.where((vmax_range > vmax))]
+            print(good_t)
+
+        T = 1.0
+        CubicSpline.__init__(self, p0, v0, pf, vf, T, space)
 
 
 #

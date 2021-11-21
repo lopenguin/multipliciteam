@@ -14,8 +14,7 @@ import numpy as np
 
 from sensor_msgs.msg     import JointState
 from urdf_parser_py.urdf import Robot
-from desired_T           import Catch, Ball
-from asteroid_generator  import AsteroidHandler
+from asteroid_generator  import AsteroidHandler, Asteroid
 
 # Import the kinematics stuff:
 from kinematics import Kinematics, p_from_T, R_from_T, Rx, Ry, Rz
@@ -32,7 +31,26 @@ from splines import  CubicSpline, Goto, Hold, Stay, QuinticSpline, Goto5
 class Generator:
     # Initialize.
     def __init__(self):
+        # Create a publisher to send the joint commands.  Add some time
+        # for the subscriber to connect.  This isn't necessary, but means
+        # we don't start sending messages until someone is listening.
+        self.pub = rospy.Publisher("/joint_states", JointState, queue_size=10)
+        rospy.sleep(0.25)
 
+        # Grab the robot's URDF from the parameter server.
+        robot = Robot.from_parameter_server()
+
+        # Instantiate the Kinematics
+        self.kin = Kinematics(robot, 'world', 'tool0')
+
+        # asteroid handling
+        self.asteroid_handler = AsteroidHandler()
+        self.arm_length = 1.0 # replace with fkin later
+
+        # other variables
+        self.catching_asteroid = False
+        self.segments = []
+        self.segment_index = 0
 
     '''
     Called every 5 ms! Forces update of arm position commands and asteroid info.
@@ -43,15 +61,32 @@ class Generator:
 
 
     '''
-    Generates new asteroids and updates asteroid predicted trajectory.
+    Handles the creation of new asteroids and path to intercept asteroid.
     '''
     def update_asteroid(self, t, dt):
+        # only change path when not catching asteroid
+        if (not self.catching_asteroid):
+            # clear out segments and segment index
+            self.segments = []
+            self.segment_index = 0
+
+            # generate an asteroid to catch. Future implementation may just
+            # select an already created asteroid here.
+            self.asteroid = Asteroid(self.asteroid_handler, self.arm_length, t)
+            # self.asteroid = Asteroid(self.asteroid_handler, self.arm_length, t, self.get_next_asteroid())
+
+            # Spline to the position and speed of the first intersection point
+            self.segments.append()
+
+            # velocity match according to a critically damped spring!
+
 
 
     '''
     Updates the arm position.
     '''
     def update_arm(self, t, dt):
+        if (self.catching_asteroid):
 
 
 #

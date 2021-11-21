@@ -144,7 +144,7 @@ class Asteroid:
 
     Key functions:
     __init__()
-    get_intercept_positions()
+    get_intercept_times()
     '''
 
     '''
@@ -153,11 +153,14 @@ class Asteroid:
     @param workspace_radius: radius of workspace "sphere" approx. (float).
     @param t_start: time of asteroid creation (float). Does NOT determine when
                     asteroid created.
+    @param asteroid_ID: id of asteroid to use (instead of generating one)
     '''
-    def __init__(self, handler, workspace_radius, t_start):
+    def __init__(self, handler, workspace_radius, t_start, asteroid_ID = None):
         self.handler = handler
-        # for now, just generate one at random. Save its ID.
-        s, self.id = self.handler.generate_asteroid_random(0.0, 0.0, 5.0, 1.0)
+        if (asteroid_ID is None):
+            s, self.id = self.handler.generate_asteroid_random(0.0, 0.0, 5.0, 1.0)
+        else:
+            self.id = asteroid_ID
 
         self.workspace_radius = workspace_radius
 
