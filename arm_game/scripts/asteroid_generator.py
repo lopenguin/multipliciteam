@@ -207,6 +207,14 @@ class Asteroid:
         return v;
 
     '''
+    Uses the velocity normal vector to return normal vector in motion
+    direction.
+    '''
+    def get_direction(self, t=0.0):
+        n = v / np.linalg.norm(v)
+        return n;
+
+    '''
     Deletes asteroid when object is destroyed.
     '''
     def remove(self):

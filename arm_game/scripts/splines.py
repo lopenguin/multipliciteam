@@ -38,6 +38,32 @@
 #
 import math
 
+# general segment object (interface class)
+class Segment:
+    def __init__(self, T, space='Joint'):
+        self.T = T
+        self.space = space
+        pass
+
+    def evaluate(self, t):
+        pass
+
+    def get_p0(self):
+        (p0, v0) = self.evaluate(0.0)
+        return p0
+    def get_v0(self):
+        (p0, v0) = self.evaluate(0.0)
+        return v0
+    def get_pf(self):
+        (pf, vf) = self.evaluate(self.T)
+        return pf
+    def get_vf(self):
+        (pf, vf) = self.evaluate(self.T)
+        return vf
+    def space(self):
+        return self.usespace
+    def duration(self):
+        return self.T
 
 #
 #  Cubic Segment Objects
@@ -46,25 +72,15 @@ import math
 #  duration and given space.  Note the space is purely for information
 #  and doesn't change the computation.
 #
-class CubicSpline:
+class CubicSpline(Segment):
     # Initialize.
     def __init__(self, p0, v0, pf, vf, T, space='Joint'):
+        Segment.__init__(self, T, space)
         # Precompute the spline parameters.
-        self.T = T
         self.a = p0
         self.b = v0
         self.c =  3*(pf-p0)/T**2 - vf/T    - 2*v0/T
         self.d = -2*(pf-p0)/T**3 + vf/T**2 +   v0/T**2
-        # Save the space
-        self.usespace = space
-
-    # Return the segment's space
-    def space(self):
-        return self.usespace
-
-    # Report the segment's duration (time length).
-    def duration(self):
-        return(self.T)
 
     # Compute the position/velocity for a given time (w.r.t. t=0 start).
     def evaluate(self, t):
@@ -88,29 +104,6 @@ class Stay(Hold):
     def __init__(self, p, space='Joint'):
         Hold.__init__(self, p, math.inf, space);
 
-'''
-Returns a spline that gets from p0 to v0 in the minimum amount of time without
-exceeding velocity and acceleration limits ("safe").
-TODO: FIX - Lorenzo (")>
-'''
-class SafeCubicSpline(CubicSpline):
-    def __init__(self, p0, v0, pf, vf, vmax, amax, space='Joint'):
-        # Use equation for cubic spline to find vmax, amax
-        # Find times that give vmax, amax
-        # Pick largest time, if fail gives T = -1
-        if (abs(v0) > vmax or abs(vf) > vmax):
-            T = -1
-        else:
-            t_range = np.linspace(0.1, 5.0, 500)
-            vmax_range = v0 - \
-                        (3*(pf-p0)/(t_range*t_range)-(vf+2*v0)/t_range)**2 / \
-                        (3*(-2*(pf-p0)/t_range**3 + (vf+v0)/(t_range*t_range)))
-            good_t = t_range[np.where((vmax_range > vmax))]
-            print(good_t)
-
-        T = 1.0
-        CubicSpline.__init__(self, p0, v0, pf, vf, T, space)
-
 
 #
 #  Quintic Segment Objects
@@ -119,27 +112,17 @@ class SafeCubicSpline(CubicSpline):
 #  duration and given space.  Note the space is purely for information
 #  and doesn't change the computation.
 #
-class QuinticSpline:
+class QuinticSpline(Segment):
     # Initialize.
     def __init__(self, p0, v0, a0, pf, vf, af, T, space='Joint'):
+        Segment.__init__(T, space)
         # Precompute the six spline parameters.
-        self.T = T
         self.a = p0
         self.b = v0
         self.c = a0
         self.d = -10*p0/T**3 - 6*v0/T**2 - 3*a0/T    + 10*pf/T**3 - 4*vf/T**2 + 0.5*af/T
         self.e =  15*p0/T**4 + 8*v0/T**3 + 3*a0/T**2 - 15*pf/T**4 + 7*vf/T**3 -   1*af/T**2
         self.f =  -6*p0/T**5 - 3*v0/T**4 - 1*a0/T**3 +  6*pf/T**5 - 3*vf/T**4 + 0.5*af/T**3
-        # Also save the space
-        self.usespace = space
-
-    # Return the segment's space
-    def space(self):
-        return self.usespace
-
-    # Report the segment's duration (time length).
-    def duration(self):
-        return(self.T)
 
     # Compute the position/velocity for a given time (w.r.t. t=0 start).
     def evaluate(self, t):
@@ -153,7 +136,38 @@ class Goto5(QuinticSpline):
     def __init__(self, p0, pf, T, space='Joint'):
         QuinticSpline.__init__(self, p0, 0*p0, 0*p0, pf, 0*pf, 0*pf, T, space)
 
+'''
+Special quintic spline. Returns a parameterized s from 0.0 -> 1.0
+with zero final and initial acceleration. p0, v0, R0, w0, pf, vf, Rf, w0 are
+simply stored and can be accessed with get_p0()...
 
-class CriticalDamp:
-    def __init__(self, x0, v0):
-        # todo...
+Note: R0 and w0 are not restricted to being matricies and vectors. R0 can be
+the vector x direction and w0 can just be wx, if desired.
+'''
+class QSplineParam(QuinticSpline):
+    def __init__(self, T, p0, v0, R0, w0, pf, vf, Rf, wf):
+        QuinticSpline.__init__(self, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, T)
+        self.p0 = p0
+        self.v0 = v0
+        self.R0 = R0
+        self.w0 = w0
+        self.pf = pf
+        self.vf = vf
+        self.Rf = Rf
+        self.wf = wf
+    def get_p0(self):
+        return self.p0
+    def get_v0(self):
+        return self.v0
+    def get_R0(self):
+        return self.R0
+    def get_w0(self):
+        return self.w0
+    def get_pf(self):
+        return self.pf
+    def get_vf(self):
+        return self.vf
+    def get_Rf(self):
+        return self.Rf
+    def get_wf(self):
+        return self.wf

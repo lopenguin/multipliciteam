@@ -53,6 +53,8 @@ class Generator:
         self.segment_index = 0
         self.last_pos = np.array([1.0, 1.0, 1.0]).reshape([3,1]) # updated every time the arm moves!
         self.last_vel = np.array([0.0, 0.0, 0.0]).reshape([3,1])
+        self.last_xidr = np.array([1.0, 0.0, 0.0]).reshape([3,1])
+        self.last_wx = 0.0
 
     '''
     Called every 5 ms! Forces update of arm position commands and asteroid info.
@@ -79,23 +81,50 @@ class Generator:
 
             # Spline to the position and speed of the first reachable intersection point
             # TODO: select the first "reachable" asteroid using a spline with
-            # maximum acceleration and velocity implemented.
+            # maximum q_dot_dot and q_dot implemented.
             t_target = asteroid.get_intercept_times()[0]
-            self.segments.append(QuinticSpline(self.last_pos, self.last_vel, \
-                                             asteroid.get_position(t_target),
-                                             asteroid.get_velocity(t_target),
-                                             t_target - t))
+            # current positions
+            pc = self.last_pos
+            vc = self.last_vel
+            Rxc = self.last_xdir # vector of x_tip direction
+            wxc = self.last_wx
+            # targets
+            pd = asteroid.get_position(t_target)
+            vd = asteroid.get_velocity(t_target)
+            Rxd = -asteroid.get_direction()
+            wxd = 0.0
+
+            self.segments.append(\
+                QSplineParam(t_target - t, pc, vc, Rxc, wxc, pd, vd, Rxd, wxd))
 
             # velocity match according to a critically damped spring!
-
-
+            self.segments.append(\
+                CritDampParam('''Tyler stuff goes here'''))
 
     '''
     Updates the arm position.
     '''
     def update_arm(self, t, dt):
         if (self.catching_asteroid):
+            
 
+
+    # Path. s from 0 to 1 is motion, s at 1 is holding.
+    def pd(self, s):
+        p0 = self.segments[self.segment_index].get_p0()
+        pf = self.segments[self.segment_index].get_pf()
+        return (1-s) * p0 + (s) * pf
+
+    def vd(self, s, sdot):
+        v0 = self.segments[self.segment_index].get_v0()
+        vf = self.segments[self.segment_index].get_vf()
+        return (1-s)*v0 + -sdot*p0 + s*vf
+
+    def Rd(self, s): # TODO factor in desired orientation
+        return Rx(np.pi/2) @ Ry(np.pi)
+
+    def wd(self, s, sdot): # TODO factor in desired orientation
+        return np.array([0.0, 0.0, 0.0]).reshape((3,1))
 
 #
 #  Main Code
