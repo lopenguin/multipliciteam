@@ -51,6 +51,8 @@ class Generator:
         self.catching_asteroid = False
         self.segments = []
         self.segment_index = 0
+        self.last_pos = np.array([1.0, 1.0, 1.0]).reshape([3,1]) # updated every time the arm moves!
+        self.last_vel = np.array([0.0, 0.0, 0.0]).reshape([3,1])
 
     '''
     Called every 5 ms! Forces update of arm position commands and asteroid info.
@@ -75,8 +77,14 @@ class Generator:
             self.asteroid = Asteroid(self.asteroid_handler, self.arm_length, t)
             # self.asteroid = Asteroid(self.asteroid_handler, self.arm_length, t, self.get_next_asteroid())
 
-            # Spline to the position and speed of the first intersection point
-            self.segments.append()
+            # Spline to the position and speed of the first reachable intersection point
+            # TODO: select the first "reachable" asteroid using a spline with
+            # maximum acceleration and velocity implemented.
+            t_target = asteroid.get_intercept_times()[0]
+            self.segments.append(QuinticSpline(self.last_pos, self.last_vel, \
+                                             asteroid.get_position(t_target),
+                                             asteroid.get_velocity(t_target),
+                                             t_target - t))
 
             # velocity match according to a critically damped spring!
 

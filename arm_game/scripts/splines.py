@@ -152,3 +152,8 @@ class Goto5(QuinticSpline):
     # Use zero initial/final velocities/accelerations (same size as positions).
     def __init__(self, p0, pf, T, space='Joint'):
         QuinticSpline.__init__(self, p0, 0*p0, 0*p0, pf, 0*pf, 0*pf, T, space)
+
+
+class CriticalDamp:
+    def __init__(self, x0, v0):
+        # todo...
