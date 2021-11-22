@@ -69,6 +69,13 @@ def R_from_axisangle(axis, theta):
                    [-axis[1],  axis[0],     0.0]])
     return np.eye(3) + np.sin(theta) * ex + (1.0-np.cos(theta)) * ex @ ex
 
+# reference: http://www.farinhansford.com/gerald/classes/cse570/additions/orientation.pdf
+def axisangle_from_R(R):
+    axis = (R + R.T - (np.trace(R) - 1)*np.eye(3))[0:3, 0]
+    axis = axis / np.linalg.norm(axis)
+    angle = np.arccos((np.trace(R) - 1)/2)
+    return (axis, angle)
+
 ### Quaternion To/From Rotation Matrix
 def R_from_q(q):
     norm2 = q[0]*q[0] + q[1]*q[1] + q[2]*q[2] + q[3]*q[3]
@@ -179,7 +186,7 @@ class Kinematics:
             if (joint.type == 'fixed'):
                 # Just append the fixed transform
                 T = T @ T_from_URDF_origin(joint.origin)
-                
+
             elif (joint.type == 'revolute'):
                 # First append the fixed transform, then rotating
                 # transform.  The joint angle comes from theta-vector.
@@ -193,9 +200,9 @@ class Kinematics:
                 # the local frame, so multiply by the local R matrix.
                 elist.append(R_from_T(T) @ e_from_URDF_axis(joint.axis))
 
-                # Advanced the "active/moving" joint number 
+                # Advanced the "active/moving" joint number
                 index += 1
-    
+
             elif (joint.type != 'fixed'):
                 # There shouldn't be any other types...
                 rospy.logwarn("Unknown Joint Type: %s", joint.type)
@@ -210,5 +217,3 @@ class Kinematics:
 
         # Return the Ttip and Jacobian (at the end of the chain).
         return (T,J)
-
-
