@@ -146,7 +146,12 @@ the vector x direction and w0 can just be wx, if desired.
 '''
 class QSplineParam(QuinticSpline):
     def __init__(self, T, p0, v0, R0, w0, pf, vf, Rf, wf):
-        QuinticSpline.__init__(self, 0.0, 0.0, 0.0, 1.0, 1.0, 0.0, T)
+        # scale sdot0, sdotf by v0 and vf
+        sdot0 = v0 / (pf - p0)
+        sdotf = vf / (pf - p0)
+
+        QuinticSpline.__init__(self, 0.0, sdot0, 0.0, 1.0, sdotf, 0.0, T)
+
         self.p0 = p0
         self.v0 = v0
         self.R0 = R0
@@ -155,6 +160,8 @@ class QSplineParam(QuinticSpline):
         self.vf = vf
         self.Rf = Rf
         self.wf = wf
+
+
     def get_p0(self):
         return self.p0
     def get_v0(self):

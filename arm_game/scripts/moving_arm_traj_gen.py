@@ -106,7 +106,7 @@ class Generator:
     '''
     def update_arm(self, t, dt):
         if (self.catching_asteroid):
-            
+
 
 
     # Path. s from 0 to 1 is motion, s at 1 is holding.
@@ -118,7 +118,7 @@ class Generator:
     def vd(self, s, sdot):
         v0 = self.segments[self.segment_index].get_v0()
         vf = self.segments[self.segment_index].get_vf()
-        return (1-s)*v0 + -sdot*p0 + s*vf
+        return (pf - p0)*sdot
 
     def Rd(self, s): # TODO factor in desired orientation
         return Rx(np.pi/2) @ Ry(np.pi)
