@@ -17,7 +17,7 @@ from urdf_parser_py.urdf import Robot
 from asteroid_generator  import AsteroidHandler, Asteroid
 
 # Import the kinematics stuff:
-from kinematics import Kinematics, p_from_T, R_from_T, Rx, Ry, Rz, axisangle_from_R
+from kinematics import Kinematics, p_from_T, R_from_T, Rx, Ry, Rz, axisangle_from_R, R_from_axisangle
 # We could also import the whole thing ("import kinematics"),
 # but then we'd have to write "kinematics.p_from_T()" ...
 
@@ -137,22 +137,21 @@ class Generator:
         # change desired angle based on path variable to move smoothly through
         theta = angle * s
 
-        # Rotating about arbitrary axis using 2.2.2 from 3DFrames Handout
-        Rd = np.array([ 0, -ez,  ey,
-                       ez,   0, -ex,
-                      -ey,  ex,   0 ]).reshape((3, 3))
-        Rd *= np.sin(theta)
-        Rd += np.cos(theta) * np.eye(3)
-        Rd += (1 - np.cos(theta)) * np.array([ex * ex, ex * ey, ex * ez,
-                                              ey * ex, ey * ey, ey * ez,
-                                              ez * ex, ez * ey, ez * ez]).reshape((3, 3))
-        
-        return Rd
+        # Rotating about arbitrary axis
+        return R_from_axisangle(axis, theta)
 
     def wd(self, s, sdot): # TODO factor in desired orientation
+        R0 = self.segments[self.segment_index].get_R0()
+        Rf = self.segments[self.segment_index].get_Rf()
+
+        # Retrieve rotation matrix that we are applying to move from initial
+        # to final orientation
+        R = np.transpose(R0) @ Rf # TODO check if this ordering is correct, remove code repetition
         
+        # retrieve the 3x1 axis and scalar angle to rotate about that axis
+        (axis, angle) = axisangle_from_R(R)
         
-        return np.array([0.0, 0.0, 0.0]).reshape((3,1))
+        return axis * sdot
 
 #
 #  Main Code
