@@ -178,3 +178,8 @@ class QSplineParam(QuinticSpline):
         return self.Rf
     def get_wf(self):
         return self.wf
+
+# Class hold at a point and orientation.
+class Hold5Param(QSplineParam):
+    def __init(self, T, p, R):
+        QSplineParam.__init__(self, T, p, 0*p, R, 0*p, p, 0*p, R, 0*p)
