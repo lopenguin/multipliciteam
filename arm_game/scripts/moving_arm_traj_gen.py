@@ -121,15 +121,8 @@ class Generator:
         return (pf - p0)*sdot
 
     def Rd(self, s):
-        R0 = self.segments[self.segment_index].get_R0()
-        Rf = self.segments[self.segment_index].get_Rf()
-
-        # Retrieve rotation matrix that we are applying to move from initial
-        # to final orientation
-        R = np.transpose(R0) @ Rf # TODO check if this ordering is correct
-        
         # retrieve the 3x1 axis and scalar angle to rotate about that axis
-        (axis, angle) = axisangle_from_R(R)
+        (axis, angle) = axisangle_from_R(self.R())
         ex = axis[0,0]
         ey = axis[1,0]
         ez = axis[2,0]
@@ -140,18 +133,20 @@ class Generator:
         # Rotating about arbitrary axis
         return R_from_axisangle(axis, theta)
 
-    def wd(self, s, sdot): # TODO factor in desired orientation
+    def wd(self, s, sdot):
+        # retrieve the 3x1 axis and scalar angle to rotate about that axis
+        (axis, angle) = axisangle_from_R(self.R())
+        return axis * sdot
+
+    # Retrieves the rotation matrix that must be applied to the initial
+    # orientation to yield the final orientation
+    def R(self):
         R0 = self.segments[self.segment_index].get_R0()
         Rf = self.segments[self.segment_index].get_Rf()
 
         # Retrieve rotation matrix that we are applying to move from initial
         # to final orientation
-        R = np.transpose(R0) @ Rf # TODO check if this ordering is correct, remove code repetition
-        
-        # retrieve the 3x1 axis and scalar angle to rotate about that axis
-        (axis, angle) = axisangle_from_R(R)
-        
-        return axis * sdot
+        return np.transpose(R0) @ Rf # TODO check if this ordering is correct
 
 #
 #  Main Code
