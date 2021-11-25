@@ -124,19 +124,40 @@ class Generator:
                     self.catching_asteroid = False
 
             (s, sdot) = self.segments[self.segment_index].evaluate(t - self.t0)
-            pd = self.pd(s)
-            Rd = self.Rd(s)
-            vd = self.vd(s, sdot)
-            wd = self.wd(s, sdot)
 
-            (T, J) = self.kin.fkin(self.last_q)
+            (T, Jp) = self.kin.fkin(self.last_q)
             p = p_from_T(T)
             R = R_from_T(T)
+            Jp_inv = np.linalg.pinv(Jp)
 
-            # get error term
-            xrdot = np.vstack(vd + self.lam*self.ep(pd, p),
-                              wd + self.lam*self.eR(Rd, R))
+            # error terms
+            ep = self.ep(self.pd(s), p)
+            eR = self.eR(self.Rd(s), R) # gives a 3 x 1 vector
 
+            # Compute velocity
+            prdot = self.vd(s,sdot) + self.lam * ep
+            wrdot = self.wd(s,sdot) + self.lam * eR
+            qdot = Jp_inv @ np.vstack((prdot, wrdot))
+
+            # discretely integrate
+            q = (self.last_q + dt * qdot)
+
+            # save info
+            self.last_q = q
+            self.last_p = p #self.pd(s)
+            self.last_R = R #self.Rd(s)
+            self.last_v = self.vd(s, sdot)
+            self.last_w = self.wd(s, sdot)
+
+            # Create and send the command message.  Note the names have to
+            # match the joint names in the URDF.  And their number must be
+            # the number of position/velocity elements.
+            # cmdmsg = JointState()
+            # cmdmsg.name         = ['joint_a1', 'joint_a2', 'joint_a3','joint_a4','joint_a5','joint_a6','joint_a7']
+            # cmdmsg.position     = q
+            # cmdmsg.velocity     = qdot
+            # cmdmsg.header.stamp = rospy.Time.now()
+            # self.pub.publish(cmdmsg)
 
     # Path. s from 0 to 1 is motion, s at 1 is holding.
     def pd(self, s):
