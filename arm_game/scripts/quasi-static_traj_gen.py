@@ -31,11 +31,28 @@ from splines import  CubicSpline, Goto, Hold, Stay, QuinticSpline, Goto5
 class Generator:
     # Initialize.
     def __init__(self):
-        # Create a publisher to send the joint commands.  Add some time
-        # for the subscriber to connect.  This isn't necessary, but means
-        # we don't start sending messages until someone is listening.
-        self.pub = rospy.Publisher("/joint_states", JointState, queue_size=10)
-        rospy.sleep(0.25)
+        # The Gazebo controllers treat each joint seperately.  We thus
+        # need a seperate publisher for each joint under the topic
+        # "/BOTNAME/CONTROLLER/command"...
+        self.N    = 7
+        self.pubs = []
+        for i in range(self.N):
+            topic = "/kuka/j" + str(i+1) + "_pd_control/command"
+            self.pubs.append(rospy.Publisher(topic, Float64, queue_size=10))
+
+        # # We used to add a short delay to allow the connection to form
+        # # before we start sending anything.  However, if we start
+        # # Gazebo "paused", this already provides time for the system
+        # # to set up, before the clock starts.
+        # rospy.sleep(0.25)
+
+        # Find the simulation's starting position.  This will block,
+        # but that's appropriate if we don't want to start until we
+        # have this information.  Of course, the simulation starts at
+        # zero, so we can simply use that information too.
+        msg = rospy.wait_for_message('/kuka/joint_states', JointState);
+        theta0 = np.array(msg.position).reshape((-1,1))
+        rospy.loginfo("Gazebo's starting position: %s", str(theta0.T))
 
         # Grab the robot's URDF from the parameter server.
         robot = Robot.from_parameter_server()
@@ -49,6 +66,7 @@ class Generator:
 
         # other variables
         self.catching_asteroid = False
+        self.asteroid = Asteroid(self.asteroid_handler, self.arm_length, 0.0)
 
         # segment stuff
         self.segments = []
@@ -64,6 +82,9 @@ class Generator:
         self.last_xidr = np.array([1.0, 0.0, 0.0]).reshape([3,1])
         self.last_wx = 0.0
 
+        # Also reset the trajectory, starting at the beginning.
+        self.reset()
+
     '''
     Called every 5 ms! Forces update of arm position commands and asteroid info.
     '''
@@ -78,6 +99,7 @@ class Generator:
     def update_asteroid(self, t, dt):
         # only change path when not catching asteroid
         if (not self.catching_asteroid):
+            self.asteroid.remove()
             # clear out segments and segment index
             self.segments = []
             self.segment_index = 0
@@ -158,6 +180,8 @@ class Generator:
             # cmdmsg.velocity     = qdot
             # cmdmsg.header.stamp = rospy.Time.now()
             # self.pub.publish(cmdmsg)
+            for i in range(self.N):
+                self.pubs[i].publish(Float64(q[i]))
 
     # Path. s from 0 to 1 is motion, s at 1 is holding.
     def pd(self, s):
@@ -182,35 +206,36 @@ class Generator:
     def eR(self, Rd, Ra):
         return 0.5*(np.cross(Ra[:,0:1], Rd[:,0:1], axis=0))
 
+    # Reset.  If the simulation resets, also restart the trajectory.
+    def reset(self):
+        # Just reset the start time to zero and create a new asteroid
+        self.t0    = 0.0
+        self.catching_asteroid = False
+
 #
 #  Main Code
 #
 if __name__ == "__main__":
-    # Prepare/initialize this node.
-    rospy.init_node('redundant')
+    # Current time (since start)
+    servotime = rospy.Time.now()
+    t  = (servotime - starttime).to_sec()
+    dt = (servotime - lasttime).to_sec()
+    lasttime = servotime
 
-    # Instantiate the trajectory generator object, encapsulating all
-    # the computation and local variables.
-    generator = Generator()
+    # Update the controller.
+    generator.update(t, dt)
 
-    # Prepare a servo loop at 100Hz.
-    rate  = 200
-    servo = rospy.Rate(rate)
-    dt    = servo.sleep_dur.to_sec()
-    rospy.loginfo("Running the servo loop with dt of %f seconds (%fHz)" %
-                  (dt, rate))
-
-
-    # Run the servo loop until shutdown (killed or ctrl-C'ed).
-    t = 0
-    while not rospy.is_shutdown():
-
-        # Update the controller.
-        generator.update(t, dt)
-
-        # Wait for the next turn.  The timing is determined by the
-        # above definition of servo.
+    # Wait for the next turn.  The timing is determined by the
+    # above definition of servo.  Note, if you reset the
+    # simulation, the time jumps back to zero and triggers an
+    # exception.  If desired, we can simple reset the time here to
+    # and start all over again.
+    try:
         servo.sleep()
-
-        # Update the time.
-        t += dt
+    except rospy.exceptions.ROSTimeMovedBackwardsException:
+        # Reset the time counters, as well as the trajectory
+        # generator object.
+        rospy.loginfo("Resetting...")
+        generator.reset()
+        starttime = rospy.Time.now()
+        lasttime  = starttime

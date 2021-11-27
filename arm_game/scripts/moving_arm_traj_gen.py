@@ -123,9 +123,6 @@ class Generator:
     def Rd(self, s):
         # retrieve the 3x1 axis and scalar angle to rotate about that axis
         (axis, angle) = axisangle_from_R(self.R())
-        ex = axis[0,0]
-        ey = axis[1,0]
-        ez = axis[2,0]
 
         # change desired angle based on path variable to move smoothly through
         theta = angle * s
