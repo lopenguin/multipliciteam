@@ -29,7 +29,7 @@
   <arg name="load_screwdriver" default="false" />
   <arg name="load_table" default="false" />
   <arg name="load_gazebo_ros_control" default="true" />
-  <arg name="robot_name" default="iiwa"/>
+  <arg name="robot_name" default="iiwa7"/>
 
   <param name="robot_description"
       command="$(find xacro)/xacro --inorder '$(find arm_game)/urdf/iiwa7.urdf.xacro'

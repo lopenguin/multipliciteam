@@ -4,7 +4,7 @@
 #  These parameters support the various controllers.  They are
 #  collected under the namespace of the robot.
 #
-iiwa:
+iiwa7:
 
   # The joint_state publisher.  This is a fake controller
   # that causes Gazebo to produce the joint_states topic.
