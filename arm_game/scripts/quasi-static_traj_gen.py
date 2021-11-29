@@ -13,7 +13,10 @@ import rospy
 import numpy as np
 
 from sensor_msgs.msg     import JointState
+from std_msgs.msg        import Float64
 from urdf_parser_py.urdf import Robot
+
+# import stuff to make asteroids!
 from asteroid_generator  import AsteroidHandler, Asteroid
 
 # Import the kinematics stuff:
@@ -37,7 +40,7 @@ class Generator:
         self.N    = 7
         self.pubs = []
         for i in range(self.N):
-            topic = "/kuka/j" + str(i+1) + "_pd_control/command"
+            topic = "/iiwa/j" + str(i+1) + "_pd_control/command"
             self.pubs.append(rospy.Publisher(topic, Float64, queue_size=10))
 
         # # We used to add a short delay to allow the connection to form
@@ -50,7 +53,9 @@ class Generator:
         # but that's appropriate if we don't want to start until we
         # have this information.  Of course, the simulation starts at
         # zero, so we can simply use that information too.
+        print("Waiting for joint state message")
         msg = rospy.wait_for_message('/kuka/joint_states', JointState);
+        print("Message received!")
         theta0 = np.array(msg.position).reshape((-1,1))
         rospy.loginfo("Gazebo's starting position: %s", str(theta0.T))
 
@@ -89,6 +94,7 @@ class Generator:
     Called every 5 ms! Forces update of arm position commands and asteroid info.
     '''
     def update(self, t, dt):
+        print("In update!")
         self.update_arm(t, dt)
         self.update_asteroid(t, dt)
 
@@ -99,6 +105,7 @@ class Generator:
     def update_asteroid(self, t, dt):
         # only change path when not catching asteroid
         if (not self.catching_asteroid):
+            print("Spawning asteroid!")
             self.asteroid.remove()
             # clear out segments and segment index
             self.segments = []
@@ -216,26 +223,50 @@ class Generator:
 #  Main Code
 #
 if __name__ == "__main__":
-    # Current time (since start)
-    servotime = rospy.Time.now()
-    t  = (servotime - starttime).to_sec()
-    dt = (servotime - lasttime).to_sec()
-    lasttime = servotime
+    print("Starting quasi-static demo...")
+    # Prepare/initialize this node.
+    rospy.init_node('trajectory')
 
-    # Update the controller.
-    generator.update(t, dt)
+    # Instantiate the trajectory generator object, encapsulating all
+    # the computation and local variables.
+    generator = Generator()
 
-    # Wait for the next turn.  The timing is determined by the
-    # above definition of servo.  Note, if you reset the
-    # simulation, the time jumps back to zero and triggers an
-    # exception.  If desired, we can simple reset the time here to
-    # and start all over again.
-    try:
-        servo.sleep()
-    except rospy.exceptions.ROSTimeMovedBackwardsException:
-        # Reset the time counters, as well as the trajectory
-        # generator object.
-        rospy.loginfo("Resetting...")
-        generator.reset()
-        starttime = rospy.Time.now()
-        lasttime  = starttime
+    # Prepare a servo loop at 200Hz.
+    rate  = 100;
+    servo = rospy.Rate(rate)
+    dt    = servo.sleep_dur.to_sec()
+    rospy.loginfo("Running the servo loop with dt of %f seconds (%fHz)" %
+                  (dt, rate))
+
+
+    # Run the servo loop until shutdown (killed or ctrl-C'ed).  This
+    # relies on rospy.Time, which is set by the simulation.  Therefore
+    # slower-than-realtime simulations propagate correctly.
+    starttime = rospy.Time.now()
+    lasttime  = starttime
+    while not rospy.is_shutdown():
+        print("Looping")
+
+        # Current time (since start)
+        servotime = rospy.Time.now()
+        t  = (servotime - starttime).to_sec()
+        dt = (servotime - lasttime).to_sec()
+        lasttime = servotime
+
+        # Update the controller.
+        generator.update(t, dt)
+
+        # Wait for the next turn.  The timing is determined by the
+        # above definition of servo.  Note, if you reset the
+        # simulation, the time jumps back to zero and triggers an
+        # exception.  If desired, we can simple reset the time here to
+        # and start all over again.
+        try:
+            servo.sleep()
+        except rospy.exceptions.ROSTimeMovedBackwardsException:
+            # Reset the time counters, as well as the trajectory
+            # generator object.
+            rospy.loginfo("Resetting...")
+            generator.reset()
+            starttime = rospy.Time.now()
+            lasttime  = starttime
