@@ -192,8 +192,6 @@ class Generator:
 
     # Path. s from 0 to 1 is motion, s at 1 is holding.
     def pd(self, s):
-        p0 = self.segments[self.segment_index].get_p0()
-        pf = self.segments[self.segment_index].get_pf()
         return (1-s) * p0 + (s) * pf
 
     def vd(self, s, sdot):

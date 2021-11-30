@@ -188,7 +188,6 @@ Special quintic spline.
 Call evaluate_p() to get (p, v).
 Call evaluate_R() to get (R, w) where w0 = wf = [0.0, 0.0, 0.0].T
 
-TODO Check that this works lol!!
 '''
 class QSplinePR(SegmentPR):
     def __init__(self, T, p0, v0, R0, pf, vf, Rf):
@@ -211,9 +210,3 @@ class QSplinePR(SegmentPR):
         R = R_from_axisangle(axis, angle)
         w = axis * sdot
         return (R, w)
-
-
-# Class hold at a point and orientation.
-class Hold5Param(QSplineParam):
-    def __init(self, T, p, R):
-        QSplineParam.__init__(self, T, p, 0*p, R, 0*p, p, 0*p, R, 0*p)
