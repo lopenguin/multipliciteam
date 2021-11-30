@@ -64,7 +64,7 @@ def Rz(theta):
     return np.array([[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]])
 
 def R_from_axisangle(axis, theta):
-    ex = np.array([[     0.0, -axis[2],  axis[1]],
+    ex = np.array([[     0.0, -float(axis[2]),  axis[1]],
                    [ axis[2],      0.0, -axis[0]],
                    [-axis[1],  axis[0],     0.0]])
     return np.eye(3) + np.sin(theta) * ex + (1.0-np.cos(theta)) * ex @ ex

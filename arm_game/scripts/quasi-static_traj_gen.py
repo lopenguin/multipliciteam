@@ -132,16 +132,15 @@ class Generator:
             Rxd = -self.asteroid.get_direction()
             wxd = np.array([0.0, 0.0, 0.0]).reshape([3,1])
 
-            # self.segments.append(\
-            #     QSplinePR(t_target - t, pc, vc, Rxc, pd, vd, Rxd))
-
             self.segments.append(\
-                QuinticSpline(pc, vc, 0*pc, pd, vd, 0*pd, t_target - t))
+                QSplinePR(t_target - t, pc, vc, Rxc, pd, vd, Rxd))
 
             # velocity match according to a critically damped spring!
             # self.segments.append(\
             #     CritDampParam('''Tyler stuff goes here'''))
             self.segments.append(QHoldPR(1.0, pd, Rxd)); # for quasi-static
+
+            self.catching_asteroid = True
 
     '''
     Updates the arm position.
@@ -156,20 +155,23 @@ class Generator:
                 if (self.segment_index >= len(self.segments)):
                     self.catching_asteroid = False
 
-            (s, sdot) = self.segments[self.segment_index].evaluate(t - self.t0)
-
             (T, Jp) = self.kin.fkin(self.last_q)
             p = p_from_T(T)
             R = R_from_T(T)
             Jp_inv = np.linalg.pinv(Jp)
+            print(self.segments[self.segment_index].evaluate_p(t - self.t0))
+
+            # desired terms
+            (pd, vd) = self.segments[self.segment_index].evaluate_p(t - self.t0)
+            (Rd, wd) = self.segments[self.segment_index].evaluate_R(t - self.t0)
 
             # error terms
-            ep = self.ep(self.pd(s), p)
-            eR = self.eR(self.Rd(s), R) # gives a 3 x 1 vector
+            ep = self.ep(pd, p)
+            eR = self.eR(Rd, R) # gives a 3 x 1 vector
 
             # Compute velocity
-            prdot = self.vd(s,sdot) + self.lam * ep
-            wrdot = self.wd(s,sdot) + self.lam * eR
+            prdot = vd + self.lam * ep
+            wrdot = wd + self.lam * eR
             qdot = Jp_inv @ np.vstack((prdot, wrdot))
 
             # discretely integrate
@@ -179,8 +181,8 @@ class Generator:
             self.last_q = q
             self.last_p = p #self.pd(s)
             self.last_R = R #self.Rd(s)
-            self.last_v = self.vd(s, sdot)
-            self.last_w = self.wd(s, sdot)
+            self.last_v = vd
+            self.last_w = wd
 
             # Create and send the command message.  Note the names have to
             # match the joint names in the URDF.  And their number must be
@@ -193,21 +195,6 @@ class Generator:
             # self.pub.publish(cmdmsg)
             for i in range(self.N):
                 self.pubs[i].publish(Float64(q[i]))
-
-    # Path. s from 0 to 1 is motion, s at 1 is holding.
-    def pd(self, s):
-        return (1-s) * p0 + (s) * pf
-
-    def vd(self, s, sdot):
-        p0 = self.segments[self.segment_index].get_p0()
-        pf = self.segments[self.segment_index].get_pf()
-        return (pf - p0)*sdot
-
-    def Rd(self, s): # TODO factor in desired orientation
-        return Rx(np.pi/2) @ Ry(np.pi)
-
-    def wd(self, s, sdot): # TODO factor in desired orientation
-        return np.array([0.0, 0.0, 0.0]).reshape((3,1))
 
     # Error functions
     def ep(self, pd, pa):
