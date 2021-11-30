@@ -25,7 +25,7 @@ from kinematics import Kinematics, p_from_T, R_from_T, Rx, Ry, Rz
 # but then we'd have to write "kinematics.p_from_T()" ...
 
 # Import the Spline stuff:
-from splines import  QSplinePR, QHoldPR
+from splines import  QSplinePR, QHoldPR, QuinticSpline
 
 
 #
@@ -120,6 +120,7 @@ class Generator:
             # TODO: select the first "reachable" asteroid using a spline with
             # maximum q_dot_dot and q_dot implemented.
             t_target = self.asteroid.get_intercept_times(t)[0]
+            t_target = float(t_target)
             # current positions
             pc = self.last_pos
             vc = self.last_vel
@@ -131,8 +132,11 @@ class Generator:
             Rxd = -self.asteroid.get_direction()
             wxd = np.array([0.0, 0.0, 0.0]).reshape([3,1])
 
+            # self.segments.append(\
+            #     QSplinePR(t_target - t, pc, vc, Rxc, pd, vd, Rxd))
+
             self.segments.append(\
-                QSplinePR(t_target - t, pc, vc, Rxc, pd, vd, Rxd))
+                QuinticSpline(pc, vc, 0*pc, pd, vd, 0*pd, t_target - t))
 
             # velocity match according to a critically damped spring!
             # self.segments.append(\

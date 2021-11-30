@@ -43,7 +43,7 @@ import numpy as np
 # general segment object (interface class)
 class Segment:
     def __init__(self, T, space='Joint'):
-        self.duration = T
+        self.T = T
         self.space = space
         pass
 
@@ -57,15 +57,15 @@ class Segment:
         (p0, v0) = self.evaluate(0.0)
         return v0
     def get_pf(self):
-        (pf, vf) = self.evaluate(self.duration)
+        (pf, vf) = self.evaluate(self.T)
         return pf
     def get_vf(self):
-        (pf, vf) = self.evaluate(self.duration)
+        (pf, vf) = self.evaluate(self.T)
         return vf
     def space(self):
         return self.usespace
     def duration(self):
-        return self.duration
+        return self.T
 
 #
 #  Cubic Segment Objects
@@ -117,7 +117,7 @@ class Stay(Hold):
 class QuinticSpline(Segment):
     # Initialize.
     def __init__(self, p0, v0, a0, pf, vf, af, T, space='Joint'):
-        Segment.__init__(T, space)
+        Segment.__init__(self, T, space)
         # Precompute the six spline parameters.
         self.a = p0
         self.b = v0
@@ -144,7 +144,7 @@ Special segment object! (Interface class)
 '''
 class SegmentPR:
     def __init__(self, T, space='Joint'):
-        self.duration = T
+        self.T = T
         self.space = space
         pass
 
@@ -160,10 +160,10 @@ class SegmentPR:
         (p0, v0) = self.evaluate_p(0.0)
         return v0
     def get_pf(self):
-        (pf, vf) = self.evaluate_p(self.duration)
+        (pf, vf) = self.evaluate_p(self.T)
         return pf
     def get_vf(self):
-        (pf, vf) = self.evaluate_p(self.duration)
+        (pf, vf) = self.evaluate_p(self.T)
         return vf
 
     def get_R0(self):
@@ -173,16 +173,16 @@ class SegmentPR:
         (R0, w0) = self.evaluate_R(0.0)
         return w0
     def get_Rf(self):
-        (Rf, wf) = self.evaluate_R(self.duration)
+        (Rf, wf) = self.evaluate_R(self.T)
         return Rf
     def get_wf(self):
-        (Rf, wf) = self.evaluate_R(self.duration)
+        (Rf, wf) = self.evaluate_R(self.T)
         return wf
 
     def space(self):
         return self.usespace
     def duration(self):
-        return self.duration
+        return self.T
 
 '''
 Special quintic spline.
@@ -219,7 +219,7 @@ Hold subclass for quintic spline
 '''
 class QHoldPR(QSplinePR):
     def __init__(self, T, p, R):
-        QSplinePR.__init__(T, p, 0*p, R, p, 0*p, R)
+        QSplinePR.__init__(self, T, p, 0*p, R, p, 0*p, R)
 
 '''
 Critically dampen a velocity from initial velocity to final velocity. Maintain rotation
@@ -230,9 +230,9 @@ Call evaluate_R() to get (R, w). R is constant
 '''
 class CritDampPR(SegmentPR):
     def __init__(self, T, p0, v0, R0):
-        self.duration = T
+        self.T = T
 
-        self.R_spline = QuinticSpline(0.0, 0.0, 0.0, 1.0, 0.0, 0.0, T)
+        self.R_spline = QuinticSpline(0.0, 0.0, 0.0, 1.0, 0.0, 0.0, self.T)
 
         self.p0 = p0
         self.v0 = v0
