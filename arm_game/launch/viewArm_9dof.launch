@@ -9,6 +9,11 @@
       command="$(find xacro)/xacro --inorder '$(find arm_game)/urdf/iiwa7.urdf.xacro'
       robot_name:=iiwa7" />
 
+  <!-- Start a GUI with sliders to command the joints.  -->
+  <node pkg ="joint_state_publisher_gui"
+	type="joint_state_publisher_gui"
+	name="jsp">
+  </node>
 
   <!-- Start any python code.  -->
   <!-- <node pkg ="arm_game"
