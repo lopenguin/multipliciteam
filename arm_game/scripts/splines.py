@@ -37,6 +37,7 @@
 #   The p0,pf,v0,vf,a0,af may be NumPy arrays.
 #
 import math
+from kinematics import axisangle_from_R, R_from_axis_angle
 
 # general segment object (interface class)
 class Segment:
@@ -207,6 +208,34 @@ class QSplinePR(SegmentPR):
         (s, sdot) = self.R_spline.evaluate(t)
 
         angle = self.tot_angle * s
+        R = R_from_axisangle(self.axis, angle)
+        w = self.axis * sdot
+        return (R, w)
+
+'''
+Critically dampen a velocity from initial velocity to final velocity. Maintain rotation
+
+Call evaluate_p() to get (p, v).
+Call evaluate_R() to get (R, w). R is constant
+
+'''
+class CritDampPR(SegmentPR):
+    def __init__(self, T, p0, v0, R0):
+        self.T = T
+
+        self.R_spline = QuinticSpline(0.0, 0.0, 0.0, 1.0, 0.0, 0.0, T)
+
+        self.p0 = p0
+        self.v0 = v0
+        self.R0 = R0
+
+    def evaluate_p(self, t):
+        return (self.p0 + self.v0*t*math.exp(-self.gamma * t/2), self.v0 + self.v0*math.exp(-self.gamma * t/2))
+
+    def evaluate_R(self, t):
+        (s, sdot) = self.R_spline.evaluate(t)
+        angle = self.tot_angle * s
         R = R_from_axisangle(axis, angle)
         w = axis * sdot
-        return (R, w)
+        return self.v0 + self.v0*math.exp(-self.gamma * t/2)
+
