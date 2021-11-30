@@ -67,13 +67,6 @@
       <mu1>0.2</mu1>
       <mu2>0.2</mu2>
     </gazebo>
-	
-	    <!-- Bucket -->
-    <gazebo reference="${robot_name}_bucket">
-      <material>Gazebo/Grey</material>
-      <mu1>0.2</mu1>
-      <mu2>0.2</mu2>
-    </gazebo>
 
   </xacro:macro>
 

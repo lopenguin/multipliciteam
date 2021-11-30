@@ -339,7 +339,7 @@
         <geometry>
           <mesh filename="package://arm_game/meshes/iiwa7/visual/bucket.stl"/>
         </geometry>
-        <material name="Red"/>
+        <material name="Grey"/>
       </visual>
 
       <collision>
@@ -347,7 +347,7 @@
         <geometry>
           <mesh filename="package://arm_game/meshes/iiwa7/collision/bucket.stl"/>
         </geometry>
-        <material name="Red"/>
+        <material name="Grey"/>
       </collision>
     </link>
 
