@@ -258,7 +258,7 @@ Call evaluate_R() to get (R, w). R is constant, w=0
 
 
 class CritDampPR(SegmentPR):
-    def __init__(self, T, p0, v0, R0):
+    def __init__(self, T, p0, v0, R0, gamma):
         self.duration = T
 
         self.R_spline = QuinticSpline(0.0, 0.0, 0.0, 1.0, 0.0, 0.0, T)
@@ -267,6 +267,8 @@ class CritDampPR(SegmentPR):
         self.v0 = v0
         self.R0 = R0
         self.Rf = R0
+        self.gamma
+
         R_tot = (self.R0).T @ self.Rf  # TODO check order!
         (self.axis, self.tot_angle) = axisangle_from_R(R_tot)
 
