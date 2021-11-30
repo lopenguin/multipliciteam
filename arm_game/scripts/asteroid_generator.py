@@ -211,6 +211,7 @@ class Asteroid:
     direction.
     '''
     def get_direction(self, t=0.0):
+        v = self.get_velocity(t)
         n = v / np.linalg.norm(v)
         return n;
 

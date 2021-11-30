@@ -212,6 +212,14 @@ class QSplinePR(SegmentPR):
         w = self.axis * sdot
         return (R, w)
 
+
+'''
+Hold subclass for quintic spline
+'''
+class QHoldPR(QSplinePR):
+    def __init__(self, T, p, R):
+        QSplinePR.__init__(T, p, 0*p, R, p, 0*p, R)
+
 '''
 Critically dampen a velocity from initial velocity to final velocity. Maintain rotation
 
@@ -238,4 +246,3 @@ class CritDampPR(SegmentPR):
         R = R_from_axisangle(axis, angle)
         w = axis * sdot
         return self.v0 + self.v0*math.exp(-self.gamma * t/2)
-
