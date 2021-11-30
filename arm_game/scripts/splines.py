@@ -37,7 +37,7 @@
 #   The p0,pf,v0,vf,a0,af may be NumPy arrays.
 #
 import math
-from kinematics import axisangle_from_R, R_from_axis_angle
+from kinematics import axisangle_from_R, R_from_axisangle
 import numpy as np
 
 # general segment object (interface class)
@@ -200,7 +200,7 @@ class QSplinePR(SegmentPR):
         self.R0 = R0
         self.Rf = Rf
         R_tot = (self.R0).T @ self.Rf # TODO check order!
-        (self.axis, self.durationot_angle) = axisangle_from_R(R_tot)
+        (self.axis, self.tot_angle) = axisangle_from_R(R_tot)
 
     def evaluate_p(self, t):
         return self.p_spline.evaluate(t)
@@ -208,7 +208,7 @@ class QSplinePR(SegmentPR):
     def evaluate_R(self, t):
         (s, sdot) = self.R_spline.evaluate(t)
 
-        angle = self.durationot_angle * s
+        angle = self.tot_angle * s
         R = R_from_axisangle(self.axis, angle)
         w = self.axis * sdot
         return (R, w)
@@ -243,7 +243,7 @@ class CritDampPR(SegmentPR):
 
     def evaluate_R(self, t):
         (s, sdot) = self.R_spline.evaluate(t)
-        angle = self.durationot_angle * s
+        angle = self.tot_angle * s
         R = R_from_axisangle(axis, angle)
         w = axis * sdot
         return self.v0 + self.v0*math.exp(-self.gamma * t/2)
