@@ -136,48 +136,82 @@ class Goto5(QuinticSpline):
     def __init__(self, p0, pf, T, space='Joint'):
         QuinticSpline.__init__(self, p0, 0*p0, 0*p0, pf, 0*pf, 0*pf, T, space)
 
+
 '''
-Special quintic spline. Returns a parameterized s from 0.0 -> 1.0
-with zero final and initial acceleration. p0, v0, R0, w0, pf, vf, Rf, w0 are
-simply stored and can be accessed with get_p0()...
-
-Note: R0 and w0 are not restricted to being matricies and vectors. R0 can be
-the vector x direction and w0 can just be wx, if desired.
+Special segment object! (Interface class)
 '''
-class QSplineParam(QuinticSpline):
-    def __init__(self, T, p0, v0, R0, w0, pf, vf, Rf, wf):
-        # scale sdot0, sdotf by v0 and vf
-        sdot0 = v0 / (pf - p0)
-        sdotf = vf / (pf - p0)
+class SegmentPR:
+    def __init__(self, T, space='Joint'):
+        self.T = T
+        self.space = space
+        pass
 
-        QuinticSpline.__init__(self, 0.0, sdot0, 0.0, 1.0, sdotf, 0.0, T)
-
-        self.p0 = p0
-        self.v0 = v0
-        self.R0 = R0
-        self.w0 = w0
-        self.pf = pf
-        self.vf = vf
-        self.Rf = Rf
-        self.wf = wf
-
+    def evaluate_p(self, t):
+        pass
+    def evaluate_R(self, t):
+        pass
 
     def get_p0(self):
-        return self.p0
+        (p0, v0) = self.evaluate_p(0.0)
+        return p0
     def get_v0(self):
-        return self.v0
-    def get_R0(self):
-        return self.R0
-    def get_w0(self):
-        return self.w0
+        (p0, v0) = self.evaluate_p(0.0)
+        return v0
     def get_pf(self):
-        return self.pf
+        (pf, vf) = self.evaluate_p(self.T)
+        return pf
     def get_vf(self):
-        return self.vf
+        (pf, vf) = self.evaluate_p(self.T)
+        return vf
+
+    def get_R0(self):
+        (R0, w0) = self.evaluate_R(0.0)
+        return R0
+    def get_w0(self):
+        (R0, w0) = self.evaluate_R(0.0)
+        return w0
     def get_Rf(self):
-        return self.Rf
+        (Rf, wf) = self.evaluate_R(self.T)
+        return Rf
     def get_wf(self):
-        return self.wf
+        (Rf, wf) = self.evaluate_R(self.T)
+        return wf
+
+    def space(self):
+        return self.usespace
+    def duration(self):
+        return self.T
+
+'''
+Special quintic spline.
+
+Call evaluate_p() to get (p, v).
+Call evaluate_R() to get (R, w) where w0 = wf = [0.0, 0.0, 0.0].T
+
+TODO Check that this works lol!!
+'''
+class QSplinePR(SegmentPR):
+    def __init__(self, T, p0, v0, R0, pf, vf, Rf):
+        self.p_spline = QuinticSpline(p0, v0, 0*v0, pf, vf, 0*vf, T)
+
+        self.R_spline = QuinticSpline(0.0, 0.0, 0.0, 1.0, 0.0, 0.0, T)
+
+        self.R0 = R0
+        self.Rf = Rf
+        R_tot = (self.R0).T @ self.Rf # TODO check order!
+        (self.axis, self.tot_angle) = axisangle_from_R(R_tot)
+
+    def evaluate_p(self, t):
+        return self.p_spline.evaluate(t)
+
+    def evaluate_R(self, t):
+        (s, sdot) = self.R_spline.evaluate(t)
+
+        angle = self.tot_angle * s
+        R = R_from_axisangle(axis, angle)
+        w = axis * sdot
+        return (R, w)
+
 
 # Class hold at a point and orientation.
 class Hold5Param(QSplineParam):
