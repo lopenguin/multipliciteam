@@ -40,6 +40,7 @@ import math
 from kinematics import axisangle_from_R, R_from_axisangle
 import numpy as np
 
+
 # general segment object (interface class)
 class Segment:
     def __init__(self, T, space='Joint'):
@@ -53,19 +54,25 @@ class Segment:
     def get_p0(self):
         (p0, v0) = self.evaluate(0.0)
         return p0
+
     def get_v0(self):
         (p0, v0) = self.evaluate(0.0)
         return v0
+
     def get_pf(self):
         (pf, vf) = self.evaluate(self.T)
         return pf
+
     def get_vf(self):
         (pf, vf) = self.evaluate(self.T)
         return vf
+
     def space(self):
         return self.usespace
+
     def duration(self):
         return self.T
+
 
 #
 #  Cubic Segment Objects
@@ -81,25 +88,28 @@ class CubicSpline(Segment):
         # Precompute the spline parameters.
         self.a = p0
         self.b = v0
-        self.c =  3*(pf-p0)/T**2 - vf/T    - 2*v0/T
-        self.d = -2*(pf-p0)/T**3 + vf/T**2 +   v0/T**2
+        self.c = 3 * (pf - p0) / T ** 2 - vf / T - 2 * v0 / T
+        self.d = -2 * (pf - p0) / T ** 3 + vf / T ** 2 + v0 / T ** 2
 
     # Compute the position/velocity for a given time (w.r.t. t=0 start).
     def evaluate(self, t):
         # Compute and return the position and velocity.
-        p = self.a + self.b * t +   self.c * t**2 +   self.d * t**3
-        v =          self.b     + 2*self.c * t    + 3*self.d * t**2
-        return (p,v)
+        p = self.a + self.b * t + self.c * t ** 2 + self.d * t ** 3
+        v = self.b + 2 * self.c * t + 3 * self.d * t ** 2
+        return (p, v)
+
 
 class Goto(CubicSpline):
     # Use zero initial/final velocities (of same size as positions).
     def __init__(self, p0, pf, T, space='Joint'):
-        CubicSpline.__init__(self, p0, 0*p0, pf, 0*pf, T, space)
+        CubicSpline.__init__(self, p0, 0 * p0, pf, 0 * pf, T, space)
+
 
 class Hold(Goto):
     # Use the same initial and final positions.
     def __init__(self, p, T, space='Joint'):
         Goto.__init__(self, p, p, T, space)
+
 
 class Stay(Hold):
     # Use an infinite time (stay forever).
@@ -122,26 +132,29 @@ class QuinticSpline(Segment):
         self.a = p0
         self.b = v0
         self.c = a0
-        self.d = -10*p0/T**3 - 6*v0/T**2 - 3*a0/T    + 10*pf/T**3 - 4*vf/T**2 + 0.5*af/T
-        self.e =  15*p0/T**4 + 8*v0/T**3 + 3*a0/T**2 - 15*pf/T**4 + 7*vf/T**3 -   1*af/T**2
-        self.f =  -6*p0/T**5 - 3*v0/T**4 - 1*a0/T**3 +  6*pf/T**5 - 3*vf/T**4 + 0.5*af/T**3
+        self.d = -10 * p0 / T ** 3 - 6 * v0 / T ** 2 - 3 * a0 / T + 10 * pf / T ** 3 - 4 * vf / T ** 2 + 0.5 * af / T
+        self.e = 15 * p0 / T ** 4 + 8 * v0 / T ** 3 + 3 * a0 / T ** 2 - 15 * pf / T ** 4 + 7 * vf / T ** 3 - 1 * af / T ** 2
+        self.f = -6 * p0 / T ** 5 - 3 * v0 / T ** 4 - 1 * a0 / T ** 3 + 6 * pf / T ** 5 - 3 * vf / T ** 4 + 0.5 * af / T ** 3
 
     # Compute the position/velocity for a given time (w.r.t. t=0 start).
     def evaluate(self, t):
         # Compute and return the position and velocity.
-        p = self.a + self.b * t +   self.c * t**2 +   self.d * t**3 +   self.e * t**4 +   self.f * t**5
-        v =          self.b     + 2*self.c * t    + 3*self.d * t**2 + 4*self.e * t**3 + 5*self.f * t**4
-        return (p,v)
+        p = self.a + self.b * t + self.c * t ** 2 + self.d * t ** 3 + self.e * t ** 4 + self.f * t ** 5
+        v = self.b + 2 * self.c * t + 3 * self.d * t ** 2 + 4 * self.e * t ** 3 + 5 * self.f * t ** 4
+        return (p, v)
+
 
 class Goto5(QuinticSpline):
     # Use zero initial/final velocities/accelerations (same size as positions).
     def __init__(self, p0, pf, T, space='Joint'):
-        QuinticSpline.__init__(self, p0, 0*p0, 0*p0, pf, 0*pf, 0*pf, T, space)
+        QuinticSpline.__init__(self, p0, 0 * p0, 0 * p0, pf, 0 * pf, 0 * pf, T, space)
 
 
 '''
 Special segment object! (Interface class)
 '''
+
+
 class SegmentPR:
     def __init__(self, T, space='Joint'):
         self.T = T
@@ -150,18 +163,22 @@ class SegmentPR:
 
     def evaluate_p(self, t):
         pass
+
     def evaluate_R(self, t):
         pass
 
     def get_p0(self):
         (p0, v0) = self.evaluate_p(0.0)
         return p0
+
     def get_v0(self):
         (p0, v0) = self.evaluate_p(0.0)
         return v0
+
     def get_pf(self):
         (pf, vf) = self.evaluate_p(self.T)
         return pf
+
     def get_vf(self):
         (pf, vf) = self.evaluate_p(self.T)
         return vf
@@ -169,20 +186,25 @@ class SegmentPR:
     def get_R0(self):
         (R0, w0) = self.evaluate_R(0.0)
         return R0
+
     def get_w0(self):
         (R0, w0) = self.evaluate_R(0.0)
         return w0
+
     def get_Rf(self):
         (Rf, wf) = self.evaluate_R(self.T)
         return Rf
+
     def get_wf(self):
         (Rf, wf) = self.evaluate_R(self.T)
         return wf
 
     def space(self):
         return self.usespace
+
     def duration(self):
         return self.T
+
 
 '''
 Special quintic spline.
@@ -191,15 +213,17 @@ Call evaluate_p() to get (p, v).
 Call evaluate_R() to get (R, w) where w0 = wf = [0.0, 0.0, 0.0].T
 
 '''
+
+
 class QSplinePR(SegmentPR):
     def __init__(self, T, p0, v0, R0, pf, vf, Rf):
-        self.p_spline = QuinticSpline(p0, v0, 0*v0, pf, vf, 0*vf, T)
+        self.p_spline = QuinticSpline(p0, v0, 0 * v0, pf, vf, 0 * vf, T)
 
         self.R_spline = QuinticSpline(0.0, 0.0, 0.0, 1.0, 0.0, 0.0, T)
 
         self.R0 = R0
         self.Rf = Rf
-        R_tot = (self.R0).T @ self.Rf # TODO check order!
+        R_tot = (self.R0).T @ self.Rf  # TODO check order!
         (self.axis, self.tot_angle) = axisangle_from_R(R_tot)
 
     def evaluate_p(self, t):
@@ -217,6 +241,8 @@ class QSplinePR(SegmentPR):
 '''
 Hold subclass for quintic spline
 '''
+
+
 class QHoldPR(QSplinePR):
     def __init__(self, T, p, R):
         QSplinePR.__init__(self, T, p, 0*p, R, p, 0*p, R)
@@ -225,9 +251,11 @@ class QHoldPR(QSplinePR):
 Critically dampen a velocity from initial velocity to final velocity. Maintain rotation
 
 Call evaluate_p() to get (p, v).
-Call evaluate_R() to get (R, w). R is constant
+Call evaluate_R() to get (R, w). R is constant, w=0
 
 '''
+
+
 class CritDampPR(SegmentPR):
     def __init__(self, T, p0, v0, R0):
         self.T = T
@@ -237,13 +265,20 @@ class CritDampPR(SegmentPR):
         self.p0 = p0
         self.v0 = v0
         self.R0 = R0
+        self.Rf = R0
+        self.gamma
+
+        R_tot = (self.R0).T @ self.Rf  # TODO check order!
+        (self.axis, self.tot_angle) = axisangle_from_R(R_tot)
 
     def evaluate_p(self, t):
-        return (self.p0 + self.v0*t*math.exp(-self.gamma * t/2), self.v0 + self.v0*math.exp(-self.gamma * t/2))
+        x = self.p0 + self.v0 * t * math.exp(-self.gamma * t / 2)
+        xdot = self.v0 + self.v0 * math.exp(-self.gamma * t / 2)
+        return (x, xdot)
 
     def evaluate_R(self, t):
         (s, sdot) = self.R_spline.evaluate(t)
         angle = self.tot_angle * s
-        R = R_from_axisangle(axis, angle)
-        w = axis * sdot
-        return self.v0 + self.v0*math.exp(-self.gamma * t/2)
+        R = R_from_axisangle(self.axis, angle)
+        w = self.axis * sdot
+        return (R, w)
