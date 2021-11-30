@@ -217,6 +217,8 @@ Call evaluate_R() to get (R, w) where w0 = wf = [0.0, 0.0, 0.0].T
 
 class QSplinePR(SegmentPR):
     def __init__(self, T, p0, v0, R0, pf, vf, Rf):
+        SegmentPR.__init__(self, T)
+
         self.p_spline = QuinticSpline(p0, v0, 0 * v0, pf, vf, 0 * vf, T)
 
         self.R_spline = QuinticSpline(0.0, 0.0, 0.0, 1.0, 0.0, 0.0, T)
@@ -234,8 +236,7 @@ class QSplinePR(SegmentPR):
 
         angle = self.tot_angle * s
         R = R_from_axisangle(self.axis, angle)
-        w = self.axis * sdot
-        return (R, w)
+        w = np.reshape(self.axis * sdot, [3,1])
 
 
 '''
