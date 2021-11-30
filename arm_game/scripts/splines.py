@@ -38,11 +38,12 @@
 #
 import math
 from kinematics import axisangle_from_R, R_from_axis_angle
+import numpy as np
 
 # general segment object (interface class)
 class Segment:
     def __init__(self, T, space='Joint'):
-        self.T = T
+        self.duration = T
         self.space = space
         pass
 
@@ -56,15 +57,15 @@ class Segment:
         (p0, v0) = self.evaluate(0.0)
         return v0
     def get_pf(self):
-        (pf, vf) = self.evaluate(self.T)
+        (pf, vf) = self.evaluate(self.duration)
         return pf
     def get_vf(self):
-        (pf, vf) = self.evaluate(self.T)
+        (pf, vf) = self.evaluate(self.duration)
         return vf
     def space(self):
         return self.usespace
     def duration(self):
-        return self.T
+        return self.duration
 
 #
 #  Cubic Segment Objects
@@ -143,7 +144,7 @@ Special segment object! (Interface class)
 '''
 class SegmentPR:
     def __init__(self, T, space='Joint'):
-        self.T = T
+        self.duration = T
         self.space = space
         pass
 
@@ -159,10 +160,10 @@ class SegmentPR:
         (p0, v0) = self.evaluate_p(0.0)
         return v0
     def get_pf(self):
-        (pf, vf) = self.evaluate_p(self.T)
+        (pf, vf) = self.evaluate_p(self.duration)
         return pf
     def get_vf(self):
-        (pf, vf) = self.evaluate_p(self.T)
+        (pf, vf) = self.evaluate_p(self.duration)
         return vf
 
     def get_R0(self):
@@ -172,16 +173,16 @@ class SegmentPR:
         (R0, w0) = self.evaluate_R(0.0)
         return w0
     def get_Rf(self):
-        (Rf, wf) = self.evaluate_R(self.T)
+        (Rf, wf) = self.evaluate_R(self.duration)
         return Rf
     def get_wf(self):
-        (Rf, wf) = self.evaluate_R(self.T)
+        (Rf, wf) = self.evaluate_R(self.duration)
         return wf
 
     def space(self):
         return self.usespace
     def duration(self):
-        return self.T
+        return self.duration
 
 '''
 Special quintic spline.
@@ -199,7 +200,7 @@ class QSplinePR(SegmentPR):
         self.R0 = R0
         self.Rf = Rf
         R_tot = (self.R0).T @ self.Rf # TODO check order!
-        (self.axis, self.tot_angle) = axisangle_from_R(R_tot)
+        (self.axis, self.durationot_angle) = axisangle_from_R(R_tot)
 
     def evaluate_p(self, t):
         return self.p_spline.evaluate(t)
@@ -207,7 +208,7 @@ class QSplinePR(SegmentPR):
     def evaluate_R(self, t):
         (s, sdot) = self.R_spline.evaluate(t)
 
-        angle = self.tot_angle * s
+        angle = self.durationot_angle * s
         R = R_from_axisangle(self.axis, angle)
         w = self.axis * sdot
         return (R, w)
@@ -221,7 +222,7 @@ Call evaluate_R() to get (R, w). R is constant
 '''
 class CritDampPR(SegmentPR):
     def __init__(self, T, p0, v0, R0):
-        self.T = T
+        self.duration = T
 
         self.R_spline = QuinticSpline(0.0, 0.0, 0.0, 1.0, 0.0, 0.0, T)
 
@@ -234,7 +235,7 @@ class CritDampPR(SegmentPR):
 
     def evaluate_R(self, t):
         (s, sdot) = self.R_spline.evaluate(t)
-        angle = self.tot_angle * s
+        angle = self.durationot_angle * s
         R = R_from_axisangle(axis, angle)
         w = axis * sdot
         return self.v0 + self.v0*math.exp(-self.gamma * t/2)
