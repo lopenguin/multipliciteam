@@ -25,7 +25,7 @@ from kinematics import Kinematics, p_from_T, R_from_T, Rx, Ry, Rz
 # but then we'd have to write "kinematics.p_from_T()" ...
 
 # Import the Spline stuff:
-from splines import  CubicSpline, Goto, Hold, Stay, QuinticSpline, Goto5
+from splines import  QSplinePR, QHoldPR
 
 
 #
@@ -40,7 +40,7 @@ class Generator:
         self.N    = 7
         self.pubs = []
         for i in range(self.N):
-            topic = "/iiwa/j" + str(i+1) + "_pd_control/command"
+            topic = "/iiwa7/j" + str(i+1) + "_pd_control/command"
             self.pubs.append(rospy.Publisher(topic, Float64, queue_size=10))
 
         # # We used to add a short delay to allow the connection to form
@@ -54,7 +54,7 @@ class Generator:
         # have this information.  Of course, the simulation starts at
         # zero, so we can simply use that information too.
         print("Waiting for joint state message")
-        msg = rospy.wait_for_message('/kuka/joint_states', JointState);
+        msg = rospy.wait_for_message('/iiwa7/joint_states', JointState);
         print("Message received!")
         theta0 = np.array(msg.position).reshape((-1,1))
         rospy.loginfo("Gazebo's starting position: %s", str(theta0.T))
@@ -63,7 +63,7 @@ class Generator:
         robot = Robot.from_parameter_server()
 
         # Instantiate the Kinematics
-        self.kin = Kinematics(robot, 'world', 'tool0')
+        self.kin = Kinematics(robot, 'world', 'iiwa7_link_ee') # TODO: bucket?
 
         # asteroid handling
         self.asteroid_handler = AsteroidHandler()
@@ -84,8 +84,8 @@ class Generator:
 
         self.last_pos = np.array([1.0, 1.0, 1.0]).reshape([3,1]) # updated every time the arm moves!
         self.last_vel = np.array([0.0, 0.0, 0.0]).reshape([3,1])
-        self.last_xidr = np.array([1.0, 0.0, 0.0]).reshape([3,1])
-        self.last_wx = 0.0
+        self.last_xdir = np.array([1.0, 0.0, 0.0]).reshape([3,1])
+        self.last_wx = np.array([0.0, 0.0, 0.0]).reshape([3,1])
 
         # Also reset the trajectory, starting at the beginning.
         self.reset()
@@ -119,25 +119,25 @@ class Generator:
             # Spline to the position and speed of the first reachable intersection point
             # TODO: select the first "reachable" asteroid using a spline with
             # maximum q_dot_dot and q_dot implemented.
-            t_target = asteroid.get_intercept_times()[0]
+            t_target = self.asteroid.get_intercept_times(t)[0]
             # current positions
             pc = self.last_pos
             vc = self.last_vel
             Rxc = self.last_xdir # vector of x_tip direction
             wxc = self.last_wx
             # targets
-            pd = asteroid.get_position(t_target)
-            vd = asteroid.get_velocity(t_target)
-            Rxd = -asteroid.get_direction()
-            wxd = 0.0
+            pd = self.asteroid.get_position(t_target)
+            vd = self.asteroid.get_velocity(t_target)
+            Rxd = -self.asteroid.get_direction()
+            wxd = np.array([0.0, 0.0, 0.0]).reshape([3,1])
 
             self.segments.append(\
-                QSplineParam(t_target - t, pc, vc, Rxc, wxc, pd, vd, Rxd, wxd))
+                QSplinePR(t_target - t, pc, vc, Rxc, pd, vd, Rxd))
 
             # velocity match according to a critically damped spring!
             # self.segments.append(\
             #     CritDampParam('''Tyler stuff goes here'''))
-            self.segments.append(Hold5Param(1.0, pd, Rxd)); # for quasi-static
+            self.segments.append(QHoldPR(1.0, pd, Rxd)); # for quasi-static
 
     '''
     Updates the arm position.
