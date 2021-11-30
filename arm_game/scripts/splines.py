@@ -37,7 +37,7 @@
 #   The p0,pf,v0,vf,a0,af may be NumPy arrays.
 #
 import math
-from kinematics import axisangle_from_R, R_from_axis_angle
+from kinematics import axisangle_from_R, R_from_axisangle
 import numpy as np
 
 # general segment object (interface class)
