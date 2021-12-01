@@ -63,101 +63,51 @@ Visualization Manager:
         Expand Link Details: false
         Expand Tree: false
         Link Tree Style: Links in Alphabetic Order
-        leftfinger:
+        iiwa7_bucket:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        link1:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        link2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        link3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        link4:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-        motor1:
+        iiwa7_link_0:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        motor2:
+        iiwa7_link_1:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        motor3:
+        iiwa7_link_2:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        motor4:
+        iiwa7_link_3:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        out1:
+        iiwa7_link_4:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        out2:
+        iiwa7_link_5:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        out3:
+        iiwa7_link_6:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        out4:
+        iiwa7_link_7:
           Alpha: 1
           Show Axes: false
           Show Trail: false
           Value: true
-        palm:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        rightfinger:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        rod1:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        rod2:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        rod3:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        rod4:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
-          Value: true
-        tip:
-          Alpha: 1
-          Show Axes: false
-          Show Trail: false
         world:
           Alpha: 1
           Show Axes: false
@@ -173,45 +123,23 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
-        leftfinger:
+        iiwa7_bucket:
           Value: true
-        link1:
+        iiwa7_link_0:
           Value: true
-        link2:
+        iiwa7_link_1:
           Value: true
-        link3:
+        iiwa7_link_2:
           Value: true
-        link4:
+        iiwa7_link_3:
           Value: true
-        motor1:
+        iiwa7_link_4:
           Value: true
-        motor2:
+        iiwa7_link_5:
           Value: true
-        motor3:
+        iiwa7_link_6:
           Value: true
-        motor4:
-          Value: true
-        out1:
-          Value: true
-        out2:
-          Value: true
-        out3:
-          Value: true
-        out4:
-          Value: true
-        palm:
-          Value: true
-        rightfinger:
-          Value: true
-        rod1:
-          Value: true
-        rod2:
-          Value: true
-        rod3:
-          Value: true
-        rod4:
-          Value: true
-        tip:
+        iiwa7_link_7:
           Value: true
         world:
           Value: true
@@ -222,42 +150,17 @@ Visualization Manager:
       Show Axes: true
       Show Names: false
       Tree:
-        link0:
-          link1:
-            link2:
-              link3:
-                link4:
-                  out4:
-                    {}
-                  tip:
-                    leftfinger:
-                      {}
-                    palm:
-                      {}
-                    rightfinger:
-                      {}
-                motor4:
-                  {}
-                out3:
-                  {}
-                rod4:
-                  {}
-              motor3:
-                {}
-              out2:
-                {}
-              rod3:
-                {}
-            motor2:
-              {}
-            out1:
-              {}
-            rod2:
-              {}
-          motor1:
-            {}
-          rod1:
-            {}
+        world:
+          iiwa7_link_0:
+            iiwa7_link_1:
+              iiwa7_link_2:
+                iiwa7_link_3:
+                  iiwa7_link_4:
+                    iiwa7_link_5:
+                      iiwa7_link_6:
+                        iiwa7_link_7:
+                          iiwa7_bucket:
+                            {}
       Update Interval: 0
       Value: true
   Enabled: true
@@ -288,7 +191,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 1.7391659021377563
+      Distance: 1.7094852924346924
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -296,17 +199,17 @@ Visualization Manager:
         Value: false
       Field of View: 0.7853981852531433
       Focal Point:
-        X: 0.1284099519252777
-        Y: 0.5152251124382019
-        Z: 0.1539243459701538
+        X: 0.0817859023809433
+        Y: 0.1488078236579895
+        Z: 1.2246384620666504
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.28539833426475525
+      Pitch: 0.04539850726723671
       Target Frame: <Fixed Frame>
-      Yaw: 0.8904043436050415
+      Yaw: 0.5554050803184509
     Saved: ~
 Window Geometry:
   Displays:
