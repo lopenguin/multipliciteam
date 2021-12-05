@@ -237,6 +237,7 @@ class QSplinePR(SegmentPR):
         angle = self.tot_angle * s
         R = R_from_axisangle(self.axis, angle)
         w = np.reshape(self.axis * sdot, [3,1])
+        return (R,w)
 
 
 '''

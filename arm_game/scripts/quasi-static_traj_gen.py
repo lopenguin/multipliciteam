@@ -40,7 +40,7 @@ class Generator:
         self.N    = 7
         self.pubs = []
         for i in range(self.N):
-            topic = "/iiwa7/j" + str(i+1) + "_pd_control/command"
+            topic = "/iiwa7/j" + str(i+1) + "_setposition/command"
             self.pubs.append(rospy.Publisher(topic, Float64, queue_size=10))
 
         # # We used to add a short delay to allow the connection to form
@@ -63,11 +63,13 @@ class Generator:
         robot = Robot.from_parameter_server()
 
         # Instantiate the Kinematics
-        self.kin = Kinematics(robot, 'world', 'iiwa7_link_ee') # TODO: bucket?
+        self.kin = Kinematics(robot, 'world', 'iiwa7_bucket') # TODO: bucket?
 
         # asteroid handling
         self.asteroid_handler = AsteroidHandler()
-        self.arm_length = 1.0 # replace with fkin later
+        (T_curr, J_curr) = self.kin.fkin(np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape([7,1]))
+        self.arm_length = np.linalg.norm(p_from_T(T_curr)) - 0.1
+        print(self.arm_length)
 
         # other variables
         self.catching_asteroid = False
@@ -94,7 +96,6 @@ class Generator:
     Called every 5 ms! Forces update of arm position commands and asteroid info.
     '''
     def update(self, t, dt):
-        print("In update!")
         self.update_arm(t, dt)
         self.update_asteroid(t, dt)
 
@@ -152,14 +153,16 @@ class Generator:
                 self.t0 = (self.t0 + dur)
                 self.segment_index += 1
 
-                if (self.segment_index >= len(self.segments)):
-                    self.catching_asteroid = False
+            if (self.segment_index >= len(self.segments)):
+                self.catching_asteroid = False
+                return
 
             (T, Jp) = self.kin.fkin(self.last_q)
             p = p_from_T(T)
             R = R_from_T(T)
-            Jp_inv = np.linalg.pinv(Jp)
-            print(self.segments[self.segment_index].evaluate_p(t - self.t0))
+            # weighted pseudoinverse
+            gam = 0.1;
+            J_winv = Jp.T @ np.linalg.inv(Jp @ Jp.T + gam*gam*np.eye(6));
 
             # desired terms
             (pd, vd) = self.segments[self.segment_index].evaluate_p(t - self.t0)
@@ -172,7 +175,7 @@ class Generator:
             # Compute velocity
             prdot = vd + self.lam * ep
             wrdot = wd + self.lam * eR
-            qdot = Jp_inv @ np.vstack((prdot, wrdot))
+            qdot = J_winv @ np.vstack((prdot, wrdot))
 
             # discretely integrate
             q = (self.last_q + dt * qdot)
@@ -200,13 +203,21 @@ class Generator:
     def ep(self, pd, pa):
         return (pd - pa)
     def eR(self, Rd, Ra):
-        return 0.5*(np.cross(Ra[:,0:1], Rd[:,0:1], axis=0))
+        return 0.5*(np.cross(Ra[:,1:2], Rd[:,1:2], axis=0))
 
     # Reset.  If the simulation resets, also restart the trajectory.
     def reset(self):
+        self.asteroid.remove()
         # Just reset the start time to zero and create a new asteroid
         self.t0    = 0.0
         self.catching_asteroid = False
+
+
+        self.last_q = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape([7,1])
+        self.last_pos = np.array([1.0, 1.0, 1.0]).reshape([3,1]) # updated every time the arm moves!
+        self.last_vel = np.array([0.0, 0.0, 0.0]).reshape([3,1])
+        self.last_xdir = np.array([1.0, 0.0, 0.0]).reshape([3,1])
+        self.last_wx = np.array([0.0, 0.0, 0.0]).reshape([3,1])
 
 #
 #  Main Code
@@ -234,7 +245,6 @@ if __name__ == "__main__":
     starttime = rospy.Time.now()
     lasttime  = starttime
     while not rospy.is_shutdown():
-        print("Looping")
 
         # Current time (since start)
         servotime = rospy.Time.now()

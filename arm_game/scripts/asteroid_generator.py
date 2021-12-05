@@ -178,6 +178,7 @@ class Asteroid:
                             (posZ > -self.workspace_radius))
         good_times = times[good_mask]
         self.intercept_times = good_times
+        print(pos)
 
     '''
     Returns set of intercept times past t_current.
