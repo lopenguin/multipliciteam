@@ -64,6 +64,23 @@ class AsteroidHandler:
         y_loc = np.random.normal(center_loc_y, std_dev)
         return self.generate_asteroid(x_loc, y_loc, z)
 
+    def generate_asteroid_torus(self, r_mean, z, std_dev):
+        """
+        Generate an asteroid at a randomly-generated position based on a gaussian distribution in a torus shape with
+        mean at r_mean
+        @param r_mean: Mean centerline of the torus
+        @param z: Defines the starting height of the asteroid (Non-random)
+        @param std_dev: Standard Deviation of gaussian (Approximately width of torus)
+
+        @return: bool success, string status_message
+        """
+        r = np.random.normal(r_mean, std_dev)
+        theta = np.random.random()*2*3.1415
+
+        x_loc = r*np.cos(theta)
+        y_loc = r*np.sin(theta)
+        return self.generate_asteroid(x_loc, y_loc, z)
+
     def generate_asteroid_random(self, center_loc_x, center_loc_y, z, max_dist):
         """
         Generate an asteroid at a randomly-generated position within a radius
@@ -86,10 +103,21 @@ class AsteroidHandler:
         try:
             # Delete the asteroid
             delete_model = rospy.ServiceProxy('/gazebo/delete_model', DeleteModel)
+            self.asteroid_ID_list.remove(ID)
 
             return delete_model("asteroid" + str(ID))
         except rospy.ServiceException as e:
             print("Delete Model service call failed: {0}".format(e))
+
+    def delete_all_asteroids(self):
+        """
+        Deletes all asteroids
+        @return: Nothing
+        """
+        for curID in self.asteroid_ID_list:
+            self.delete_asteroid(curID)
+        return
+
 
     def get_asteroid_state(self, ID):
         """
@@ -257,10 +285,12 @@ if __name__ == "__main__":
 
     print(AH.generate_asteroid_random(0.0, 0.0, 5.0, 1.0))
     print(AH.generate_asteroid_gaussian(0.0, 0.0, 5.0, 1.0))
+    print(AH.generate_asteroid_torus(5.0,5.0,1.0))
 
     print("Gravity:")
     print(AH.get_gravity())
 
+    AH.delete_all_asteroids()
 
     print("-----")
     # using Asteroid:
