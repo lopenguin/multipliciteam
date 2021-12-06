@@ -158,7 +158,8 @@ class Asteroid:
     def __init__(self, handler, workspace_radius, t_start, asteroid_ID = None):
         self.handler = handler
         if (asteroid_ID is None):
-            s, self.id = self.handler.generate_asteroid_random(0.0, 0.0, 5.0, 1.0)
+            s, self.id = self.handler.generate_asteroid_random(0.0, 0.0, 5.0, 0.8)
+            # s, self.id = self.handler.generate_asteroid(1.0, 0.0, 5.0)
         else:
             self.id = asteroid_ID
 
@@ -178,7 +179,6 @@ class Asteroid:
                             (posZ > -self.workspace_radius))
         good_times = times[good_mask]
         self.intercept_times = good_times
-        print(pos)
 
     '''
     Returns set of intercept times past t_current.

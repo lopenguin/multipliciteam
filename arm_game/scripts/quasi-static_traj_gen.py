@@ -68,11 +68,9 @@ class Generator:
         # asteroid handling
         self.asteroid_handler = AsteroidHandler()
         (T_curr, J_curr) = self.kin.fkin(np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape([7,1]))
-        self.arm_length = np.linalg.norm(p_from_T(T_curr)) - 0.1
-        print(self.arm_length)
+        self.arm_length = np.linalg.norm(p_from_T(T_curr))
 
         # other variables
-        self.catching_asteroid = False
         self.asteroid = Asteroid(self.asteroid_handler, self.arm_length, 0.0)
 
         # segment stuff
@@ -81,8 +79,8 @@ class Generator:
         self.t0 = 0.0
 
         # starting guess and last values
-        self.last_q = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape([7,1])
-        self.lam = 1.0
+        self.last_q = np.array([0.0, np.pi/2, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape([7,1])
+        self.lam = 20.0
 
         self.last_pos = np.array([1.0, 1.0, 1.0]).reshape([3,1]) # updated every time the arm moves!
         self.last_vel = np.array([0.0, 0.0, 0.0]).reshape([3,1])
@@ -97,7 +95,7 @@ class Generator:
     '''
     def update(self, t, dt):
         self.update_arm(t, dt)
-        self.update_asteroid(t, dt)
+        # self.update_asteroid(t, dt)
 
 
     '''
@@ -105,113 +103,117 @@ class Generator:
     '''
     def update_asteroid(self, t, dt):
         # only change path when not catching asteroid
-        if (not self.catching_asteroid):
-            print("Spawning asteroid!")
-            self.asteroid.remove()
-            # clear out segments and segment index
-            self.segments = []
-            self.segment_index = 0
+        print("Spawning asteroid!")
+        self.asteroid.remove()
+        # clear out segments and segment index
+        self.segments = []
+        self.segment_index = 0
 
-            # generate an asteroid to catch. Future implementation may just
-            # select an already created asteroid here.
-            self.asteroid = Asteroid(self.asteroid_handler, self.arm_length, t)
-            # self.asteroid = Asteroid(self.asteroid_handler, self.arm_length, t, self.get_next_asteroid())
+        # generate an asteroid to catch. Future implementation may just
+        # select an already created asteroid here.
+        self.asteroid = Asteroid(self.asteroid_handler, self.arm_length, t)
 
-            # Spline to the position and speed of the first reachable intersection point
-            # TODO: select the first "reachable" asteroid using a spline with
-            # maximum q_dot_dot and q_dot implemented.
-            t_target = self.asteroid.get_intercept_times(t)[0]
-            t_target = float(t_target)
-            # current positions
-            pc = self.last_pos
-            vc = self.last_vel
-            Rxc = self.last_xdir # vector of x_tip direction
-            wxc = self.last_wx
-            # targets
-            pd = self.asteroid.get_position(t_target)
-            vd = self.asteroid.get_velocity(t_target)
-            Rxd = -self.asteroid.get_direction()
-            wxd = np.array([0.0, 0.0, 0.0]).reshape([3,1])
+        # Spline to the position and speed of the first reachable intersection point
+        # TODO: select the first "reachable" asteroid using a spline with
+        # maximum q_dot_dot and q_dot implemented.
+        intercept_times = self.asteroid.get_intercept_times(t)
+        t_target = intercept_times[int(len(intercept_times)/2)] # Todo: update
+        t_target = float(t_target)
+        # current positions
+        pc = self.last_pos
+        vc = self.last_vel
+        Rxc = self.last_xdir # vector of x_tip direction
+        wxc = self.last_wx
+        # targets
+        pd = self.asteroid.get_position(t_target)
+        vd = self.asteroid.get_velocity(t_target)
+        Rxd = -self.asteroid.get_direction()
+        Rxd = np.array([[0.0, 0.0, 1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
+        wxd = np.array([0.0, 0.0, 0.0]).reshape([3,1])
 
-            self.segments.append(\
-                QSplinePR(t_target - t, pc, vc, Rxc, pd, vd, Rxd))
+        # self.segments.append(\
+        #     QSplinePR(t_target - t, pc, vc, Rxc, pd, vd, Rxd))
 
-            # velocity match according to a critically damped spring!
-            # self.segments.append(\
-            #     CritDampParam('''Tyler stuff goes here'''))
-            self.segments.append(QHoldPR(1.0, pd, Rxd)); # for quasi-static
-
-            self.catching_asteroid = True
+        # velocity match according to a critically damped spring!
+        # self.segments.append(\
+        #     CritDampParam('''Tyler stuff goes here'''))
+        self.segments.append(QHoldPR(1.0, pd, Rxd)); # for quasi-static # TEMP
+        self.segments.append(QHoldPR(1.0, pd, Rxd)); # for quasi-static
 
     '''
     Updates the arm position.
     '''
     def update_arm(self, t, dt):
-        if (self.catching_asteroid):
-            dur = self.segments[self.segment_index].duration()
-            if (t - self.t0 >= dur):
-                self.t0 = (self.t0 + dur)
-                self.segment_index += 1
+        if (self.segment_index >= len(self.segments)):
+            self.update_asteroid(t, dt)
 
-            if (self.segment_index >= len(self.segments)):
-                self.catching_asteroid = False
-                return
+        dur = self.segments[self.segment_index].duration()
+        if (t - self.t0 >= dur):
+            self.t0 = (self.t0 + dur)
+            self.segment_index += 1
 
-            (T, Jp) = self.kin.fkin(self.last_q)
-            p = p_from_T(T)
-            R = R_from_T(T)
-            # weighted pseudoinverse
-            gam = 0.1;
-            J_winv = Jp.T @ np.linalg.inv(Jp @ Jp.T + gam*gam*np.eye(6));
+        if (self.segment_index >= len(self.segments)):
+            self.update_asteroid(t, dt)
 
-            # desired terms
-            (pd, vd) = self.segments[self.segment_index].evaluate_p(t - self.t0)
-            (Rd, wd) = self.segments[self.segment_index].evaluate_R(t - self.t0)
+        (T, Jp) = self.kin.fkin(self.last_q)
+        p = p_from_T(T)
+        R = R_from_T(T)
+        # weighted pseudoinverse
+        gam = 0.5;
+        J_inv = Jp.T @ np.linalg.inv(Jp @ Jp.T + gam*gam*np.eye(6));
+        # J_inv = np.linalg.pinv(Jp)
 
-            # error terms
-            ep = self.ep(pd, p)
-            eR = self.eR(Rd, R) # gives a 3 x 1 vector
+        # desired terms
+        (pd, vd) = self.segments[self.segment_index].evaluate_p(t - self.t0)
+        (Rd, wd) = self.segments[self.segment_index].evaluate_R(t - self.t0)
 
-            # Compute velocity
-            prdot = vd + self.lam * ep
-            wrdot = wd + self.lam * eR
-            qdot = J_winv @ np.vstack((prdot, wrdot))
+        # error terms
+        ep = self.ep(pd, p)
+        print(ep)
+        eR = self.eR(Rd, R) # gives a 3 x 1 vector
 
-            # discretely integrate
-            q = (self.last_q + dt * qdot)
+        # Compute velocity
+        prdot = vd + self.lam * ep
+        wrdot = wd + self.lam * eR
+        qdot = J_inv @ np.vstack((prdot, wrdot))
 
-            # save info
-            self.last_q = q
-            self.last_p = p #self.pd(s)
-            self.last_R = R #self.Rd(s)
-            self.last_v = vd
-            self.last_w = wd
+        # discretely integrate
+        q = (self.last_q + dt * qdot)
 
-            # Create and send the command message.  Note the names have to
-            # match the joint names in the URDF.  And their number must be
-            # the number of position/velocity elements.
-            # cmdmsg = JointState()
-            # cmdmsg.name         = ['joint_a1', 'joint_a2', 'joint_a3','joint_a4','joint_a5','joint_a6','joint_a7']
-            # cmdmsg.position     = q
-            # cmdmsg.velocity     = qdot
-            # cmdmsg.header.stamp = rospy.Time.now()
-            # self.pub.publish(cmdmsg)
-            for i in range(self.N):
-                self.pubs[i].publish(Float64(q[i]))
+        # save info
+        self.last_q = q
+        self.last_p = p #self.pd(s)
+        self.last_R = R #self.Rd(s)
+        self.last_v = vd
+        self.last_w = wd
+
+        # Create and send the command message.  Note the names have to
+        # match the joint names in the URDF.  And their number must be
+        # the number of position/velocity elements.
+        # cmdmsg = JointState()
+        # cmdmsg.name         = ['joint_a1', 'joint_a2', 'joint_a3','joint_a4','joint_a5','joint_a6','joint_a7']
+        # cmdmsg.position     = q
+        # cmdmsg.velocity     = qdot
+        # cmdmsg.header.stamp = rospy.Time.now()
+        # self.pub.publish(cmdmsg)
+        for i in range(self.N):
+            self.pubs[i].publish(Float64(q[i]))
 
     # Error functions
     def ep(self, pd, pa):
         return (pd - pa)
     def eR(self, Rd, Ra):
-        return 0.5*(np.cross(Ra[:,1:2], Rd[:,1:2], axis=0))
+        return 0.5*(np.cross(Ra[:,0:1], Rd[:,0:1], axis=0) +
+                    np.cross(Ra[:,1:2], Rd[:,1:2], axis=0) +
+                    np.cross(Ra[:,2:3], Rd[:,2:3], axis=0))
+    def eX(self, Xd, Ra):
+        return 0.5*(np.cross(Ra[:,1:2], Xd, axis=0))
 
     # Reset.  If the simulation resets, also restart the trajectory.
     def reset(self):
         self.asteroid.remove()
         # Just reset the start time to zero and create a new asteroid
         self.t0    = 0.0
-        self.catching_asteroid = False
-
 
         self.last_q = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape([7,1])
         self.last_pos = np.array([1.0, 1.0, 1.0]).reshape([3,1]) # updated every time the arm moves!
