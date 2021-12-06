@@ -6,7 +6,7 @@
 
   <!-- Load the URDF file into the robot_description parameter. -->
   <param name="robot_description"
-      command="$(find xacro)/xacro --inorder '$(find arm_game)/urdf/iiwa7.urdf.xacro'
+      command="$(find xacro)/xacro --inorder '$(find arm_game)/urdf/iiwa7_9dof.urdf.xacro'
       robot_name:=iiwa7" />
 
   <!-- Start a GUI with sliders to command the joints.  -->
