@@ -6,7 +6,7 @@
 import rospy
 
 import rospkg
-from gazebo_msgs.srv import SpawnModel, DeleteModel, GetModelState
+from gazebo_msgs.srv import SpawnModel, DeleteModel, GetModelState, GetPhysicsProperties
 from geometry_msgs.msg import Point, Pose, Quaternion
 import numpy as np
 
@@ -136,6 +136,15 @@ class AsteroidHandler:
         vz = state.twist.linear.z;
         return np.array([vx, vy, vz]).reshape([3,1]);
 
+    def get_gravity(self):
+        try:
+            get_gravity_service = rospy.ServiceProxy('/gazebo/get_physics_properties', GetPhysicsProperties)
+            return get_gravity_service().gravity
+
+        except rospy.ServiceException as e:
+            rospy.loginfo("Get Physics Properties State service call failed:  {0}".format(e))
+
+
 class Asteroid:
     '''
     Asteroid is an interface class that holds a single asteroid and computes
@@ -168,7 +177,9 @@ class Asteroid:
         self.t_start = t_start
         self.p0 = self.handler.get_asteroid_position(self.id);
         self.v0 = self.handler.get_asteroid_velocity(self.id);
-        self.grav = np.array([0, 0, -9.8]).reshape([3,1]);      # TODO: FIX THIS TERM SO GRAVITY IS PULLED FROM GAZEBO
+
+        grav_vec = self.handler.get_gravity()
+        self.grav = np.array([grav_vec.x, grav_vec.y, grav_vec.z]).reshape([3,1]);
 
         # get intercept positions
         times = np.linspace(t_start, t_start + 10.0, num=1001)
@@ -246,6 +257,10 @@ if __name__ == "__main__":
 
     print(AH.generate_asteroid_random(0.0, 0.0, 5.0, 1.0))
     print(AH.generate_asteroid_gaussian(0.0, 0.0, 5.0, 1.0))
+
+    print("Gravity:")
+    print(AH.get_gravity())
+
 
     print("-----")
     # using Asteroid:
