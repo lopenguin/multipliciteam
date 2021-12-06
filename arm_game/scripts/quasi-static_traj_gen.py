@@ -211,7 +211,7 @@ class Generator:
 
     # Reset.  If the simulation resets, also restart the trajectory.
     def reset(self):
-        self.asteroid.remove()
+        self.asteroid_handler.delete_all_asteroids()
         # Just reset the start time to zero and create a new asteroid
         self.t0    = 0.0
 
