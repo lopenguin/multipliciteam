@@ -326,7 +326,7 @@
       <child link="${robot_name}_bucket"/>
       <origin xyz="0 0 0.16" rpy="0 0 0"/>
     </joint>
-	
+
 	<link name="${robot_name}_bucket">
       <inertial>
         <origin xyz="0.1135 -0.04 0.12" rpy="0 ${PI} 0"/>

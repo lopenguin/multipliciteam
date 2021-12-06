@@ -159,7 +159,7 @@ class Generator:
         p = p_from_T(T)
         R = R_from_T(T)
         # weighted pseudoinverse
-        gam = 0.5;
+        gam = 0.1;
         J_inv = Jp.T @ np.linalg.inv(Jp @ Jp.T + gam*gam*np.eye(6));
         # J_inv = np.linalg.pinv(Jp)
 
