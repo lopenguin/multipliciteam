@@ -104,10 +104,12 @@ class AsteroidHandler:
             # Delete the asteroid
             delete_model = rospy.ServiceProxy('/gazebo/delete_model', DeleteModel)
 
-            if delete_model.success == True:
+            out = delete_model("asteroid" + str(ID))
+
+            if out.success == True:
                 self.asteroid_ID_list.remove(ID)
 
-            return delete_model("asteroid" + str(ID))
+            return out
         except rospy.ServiceException as e:
             print("Delete Model service call failed: {0}".format(e))
 
