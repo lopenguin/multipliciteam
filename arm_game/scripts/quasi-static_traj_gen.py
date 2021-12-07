@@ -226,11 +226,10 @@ class Generator:
     # Desired orientation calculation based on current orientation, R (np array)
     def Rf(self, eyd, R): # aligns y axis to path of incoming asteroid, eyd (np array)
         eyc = R[0:3,1:2] # current y axis
-        axis = np.cross(eyc, eyd, axis=0) # axis to rotate eyc about to meet eyd
+        axis = np.cross(eyc, eyd, axis=0).reshape([3]) # axis to rotate eyc about to meet eyd
 
         # assume eyc and eyd to both be normed
         angle = np.arccos(eyc.T @ eyd)[0] # angle to rotate about axis
-        print(angle)
 
         return R_from_axisangle(axis, angle) @ R
 
