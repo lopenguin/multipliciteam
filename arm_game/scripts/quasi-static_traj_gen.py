@@ -118,7 +118,8 @@ class Generator:
         # TODO: select the first "reachable" asteroid using a spline with
         # maximum q_dot_dot and q_dot implemented.
         intercept_times = self.asteroid.get_intercept_times(t)
-        t_target = intercept_times[int((np.random.random()/2 + 0.1)*len(intercept_times))] # Todo: update
+        # t_target = intercept_times[int((np.random.random()/2 + 0.1)*len(intercept_times))] # Todo: update
+        t_target = intercept_times[int(0.5*len(intercept_times))]
         t_target = float(t_target)
         # current positions
         pc = self.last_pos
@@ -156,11 +157,12 @@ class Generator:
         segment = self.segments[self.segment_index]
 
         (T, Jp) = self.kin.fkin(self.last_q)
+        Jp = np.vstack((Jp[0:5, 0:7]))#,Jp[,0:7]))
         p = p_from_T(T)
         R = R_from_T(T)
         # weighted pseudoinverse
-        gam = 0.2;
-        J_inv = Jp.T @ np.linalg.inv(Jp @ Jp.T + gam*gam*np.eye(6));
+        gam = 0.5;
+        J_inv = Jp.T @ np.linalg.inv(Jp @ Jp.T + gam*gam*np.eye(5));
         # J_inv = np.linalg.pinv(Jp)
 
         # desired terms
@@ -171,6 +173,8 @@ class Generator:
         ep = self.ep(pd, p)
         # print(ep)
         eR = self.eR(Rd, R) # gives a 3 x 1 vector
+        eR = np.vstack((eR[0],eR[1]))
+        wd = np.vstack((wd[0],wd[1]))
 
         # Compute velocity
         prdot = vd + self.lam * ep
@@ -204,7 +208,7 @@ class Generator:
     def Rf(self, eyd, R): # aligns y axis to path of incoming asteroid, eyd (np array)
         eyc = R[0:3,1:2] # current y axis
         axis = np.cross(eyc, eyd, axis=0) # axis to rotate eyc about to meet eyd
-        
+
         # assume eyc and eyd to both be normed
         angle = np.arccos(np.dot(eyc, eyd)) # angle to rotate about axis
 
