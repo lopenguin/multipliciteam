@@ -20,7 +20,7 @@ from urdf_parser_py.urdf import Robot
 from asteroid_generator  import AsteroidHandler, Asteroid
 
 # Import the kinematics stuff:
-from kinematics import Kinematics, p_from_T, R_from_T, Rx, Ry, Rz
+from kinematics import Kinematics, p_from_T, R_from_T, Rx, Ry, Rz, R_from_axisangle
 # We could also import the whole thing ("import kinematics"),
 # but then we'd have to write "kinematics.p_from_T()" ...
 
@@ -200,6 +200,17 @@ class Generator:
         # self.pub.publish(cmdmsg)
         for i in range(self.N):
             self.pubs[i].publish(Float64(q[i]))
+
+    # Desired orientation calculation based on current orientation, R (np array)
+    def Rf(self, eyd, R): # aligns y axis to path of incoming asteroid, eyd (np array)
+        eyc = R[0:3,1:2] # current y axis
+        axis = np.cross(eyc, eyd, axis=0) # axis to rotate eyc about to meet eyd
+        
+        # assume eyc and eyd to both be normed
+        angle = np.arccos(np.dot(eyc, eyd)) # angle to rotate about axis
+
+        return R_from_axisangle(axis, angle) @ R
+
 
     # Error functions
     def ep(self, pd, pa):

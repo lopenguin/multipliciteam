@@ -216,7 +216,7 @@ class Kinematics:
                 T = T @ T_from_URDF_origin(joint.origin)
                 T = T @ T_from_URDF_prismatic(joint.axis, theta[index])
 
-                # Save the position
+                # Save the position (we do not use it but it makes indexing easier)
                 plist.append(p_from_T(T))
 
                 # Save the joint axis. The URDF <axis> is given in
