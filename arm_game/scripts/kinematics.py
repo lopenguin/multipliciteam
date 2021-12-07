@@ -75,7 +75,8 @@ def axisangle_from_R(R):
     axis = axis / np.linalg.norm(axis)
     if (np.trace(R) > 2 or np.trace(R) < -2):
         angle = 0;
-    angle = np.arccos((np.trace(R) - 1)/2)
+    else:
+        angle = np.arccos((np.trace(R) - 1)/2)
     return (axis, angle)
 
 ### Quaternion To/From Rotation Matrix
