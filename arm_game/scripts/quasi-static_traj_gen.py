@@ -81,7 +81,7 @@ class Generator:
 
         # starting guess and last values
         self.last_q = np.array([0.0, np.pi/2, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape([7,1])
-        self.lam = 7.0
+        self.lam = 7.05
 
         self.last_pos = np.array([1.0, 1.0, 1.0]).reshape([3,1]) # updated every time the arm moves!
         self.last_vel = np.array([0.0, 0.0, 0.0]).reshape([3,1])
@@ -119,8 +119,8 @@ class Generator:
         # TODO: select the first "reachable" asteroid using a spline with
         # maximum q_dot_dot and q_dot implemented.
         intercept_times = self.asteroid.get_intercept_times(t)
-        # t_target = intercept_times[int((np.random.random()/2 + 0.1)*len(intercept_times))] # Todo: update
-        t_target = intercept_times[int(0.5*len(intercept_times))] # Todo: update
+        t_target = intercept_times[int((np.random.random()/2 + 0.1)*len(intercept_times))] # Todo: update
+        # t_target = intercept_times[int(0.5*len(intercept_times))] # Todo: update
         t_target = float(t_target)
         # current positions
         pc = self.last_pos
@@ -173,7 +173,7 @@ class Generator:
         # weighted pseudoinverse
         J_inv = np.array([])
         if (segment.get_type() == "both"):
-            gam = 0.05
+            gam = 0.03
             J_inv = Jp.T @ np.linalg.inv(Jp @ Jp.T + gam*gam*np.eye(6));
         elif (segment.get_type() == "position_only"):
             gam = 0.05
@@ -232,6 +232,7 @@ class Generator:
 
         # assume eyc and eyd to both be normed
         angle = np.arccos(eyc.T @ eyd)[0] # angle to rotate about axis
+        axis /= np.linalg.norm(axis)
 
         return R_from_axisangle(axis, angle) @ R
 
