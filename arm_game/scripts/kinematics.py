@@ -122,7 +122,9 @@ def T_from_URDF_axisangle(axis, theta):
 def e_from_URDF_axis(axis):
     return np.array(axis).reshape((3,1))
 
-
+### From URDF prismatic elements:
+def T_from_URDF_prismatic(axis, translation): # axis points in dirn of translation
+    return T_from_Rp(np.eye(3), translation * np.array(axis).reshape((3,1)))
 
 #
 #   Kinematics Class
@@ -175,6 +177,7 @@ class Kinematics:
         # each in a python, and keep an index counter.
         plist = []
         elist = []
+        jlist = [] # holds the types of each of the active joints
         index = 0
 
         # Walk the chain, one URDF <joint> entry at a time.  Each can
@@ -200,8 +203,32 @@ class Kinematics:
                 # the local frame, so multiply by the local R matrix.
                 elist.append(R_from_T(T) @ e_from_URDF_axis(joint.axis))
 
+                # Save the joint type
+                jlist.append('revolute')
+
                 # Advanced the "active/moving" joint number
                 index += 1
+
+            # TODO Verify that this operates properly
+            elif (joint.type == 'prismatic'):
+                # First append the fixed transform, then translating
+                # transform.  The translation distance comes from theta-vector.
+                T = T @ T_from_URDF_origin(joint.origin)
+                T = T @ T_from_URDF_prismatic(joint.axis, theta[index])
+
+                # Save the position
+                plist.append(p_from_T(T))
+
+                # Save the joint axis. The URDF <axis> is given in
+                # the local frame, so multiply by the local R matrix.
+                elist.append(R_FROM_T(T) @ e_from_URDF_axis(joint.axis))
+
+                # Save the joint type
+                jlist.append('prismatic')
+
+                # Advance the "active/moving" joint number
+                index += 1
+                
 
             elif (joint.type != 'fixed'):
                 # There shouldn't be any other types...
@@ -212,8 +239,12 @@ class Kinematics:
         ptip = p_from_T(T)
         J    = np.zeros((6,index))
         for i in range(index):
-            J[0:3,i:i+1] = np.cross(elist[i], ptip-plist[i], axis=0)
-            J[3:6,i:i+1] = elist[i]
+            if (jlist[i] == 'revolute'):
+                J[0:3,i:i+1] = np.cross(elist[i], ptip-plist[i], axis=0)
+                J[3:6,i:i+1] = elist[i]
+            elif (jlist[i] == 'prismatic'):
+                J[0:3,i:i+1] = elist[i]
+                J[3:6,i:i+1] = np.zeros((3,1))
 
         # Return the Ttip and Jacobian (at the end of the chain).
         return (T,J)
