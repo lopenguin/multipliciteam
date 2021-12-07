@@ -151,7 +151,7 @@ class Generator:
         if (t - self.t0 >= dur):
             self.t0 = (self.t0 + dur)
             # only add a segment to change orientation if we just did a position only segment!
-            if (self.segments[self.segment_index].get_type == "position_only"):
+            if (self.segments[self.segment_index].get_type() == "position_only"):
                 vd = np.array([0.0,0.0,0.0]).reshape([3,1])
                 Rf = self.Rf(-self.asteroid_axis, self.last_R)
                 self.segments.append(QSplinePR(dur, self.last_pos, vd, self.last_R, \
@@ -162,6 +162,7 @@ class Generator:
             self.segment_index += 1
 
         if (self.segment_index >= len(self.segments)):
+            print(self.segment_index)
             self.update_asteroid(t, dt)
         segment = self.segments[self.segment_index]
 
@@ -175,7 +176,6 @@ class Generator:
             J_inv = Jp.T @ np.linalg.inv(Jp @ Jp.T + gam*gam*np.eye(6));
         elif (segment.get_type() == "position_only"):
             Jp = Jp[0:3, 0:7]
-            print(Jp) # just to double check
             J_inv = Jp.T @ np.linalg.inv(Jp @ Jp.T + gam*gam*np.eye(3));
         else:
             print("I don't recognize you!")
