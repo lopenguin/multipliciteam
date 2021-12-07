@@ -225,7 +225,7 @@ class QSplinePR(SegmentPR):
 
         self.R0 = R0
         self.Rf = Rf
-        R_tot = (self.R0).T @ self.Rf  # TODO check order!
+        R_tot = (self.R0).T @ self.Rf
         (self.axis, self.tot_angle) = axisangle_from_R(R_tot)
 
     def evaluate_p(self, t):
