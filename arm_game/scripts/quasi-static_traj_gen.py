@@ -26,7 +26,7 @@ from kinematics import Kinematics, p_from_T, R_from_T, Rx, Ry, Rz, R_from_axisan
 # but then we'd have to write "kinematics.p_from_T()" ...
 
 # Import the Spline stuff:
-from splines import  QSplinePR, QHoldPR, QuinticSpline, CritDampPR
+from splines import  QSplinePR, QHoldPR, QuinticSpline, CritDampPR, QSplinePOnly
 
 
 #
@@ -87,9 +87,10 @@ class Generator:
         self.last_vel = np.array([0.0, 0.0, 0.0]).reshape([3,1])
         self.last_R = np.array([[0.0, 0.0, 1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
         self.last_wx = np.array([0.0, 0.0, 0.0]).reshape([3,1])
+        self.asteroid_direction = self.asteroid.get_direction()
 
         # Also reset the trajectory, starting at the beginning.
-        self.reset()
+        # self.reset()
 
     '''
     Called every 5 ms! Forces update of arm position commands and asteroid info.
@@ -127,16 +128,16 @@ class Generator:
         # targets
         pd = self.asteroid.get_position(t_target)
         vd = np.array([0.0,0.0,0.0]).reshape([3,1]) #self.asteroid.get_velocity(t_target)
-        Rxd = -self.asteroid.get_direction()
+        self.asteroid_direction = -self.asteroid.get_direction()
         Rxd = np.array([[0.0, 0.0, 1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
 
         self.segments.append(\
-            QSplinePR(t_target - t, pc, vc, Rxc, pd, vd, Rxd))
+            QSplinePOnly(t_target - t, pc, vc, pd, vd))
 
         # velocity match according to a critically damped spring!
         # self.segments.append(\
         #     CritDampParam('''Tyler stuff goes here'''))
-        self.segments.append(QHoldPR(1.0, pd, Rxd)); # for quasi-static
+        # self.segments.append(QHoldPR(1.0, pd, Rxd)); # for quasi-static
         # self.segments.append(CritDampPR(1.0, pd, vd, Rxd)); # for dynamic
 
     '''
@@ -149,6 +150,15 @@ class Generator:
         dur = self.segments[self.segment_index].duration()
         if (t - self.t0 >= dur):
             self.t0 = (self.t0 + dur)
+            # only add a segment to change orientation if we just did a position only segment!
+            if (self.segments[self.segment_index].get_type == "position_only"):
+                vd = np.array([0.0,0.0,0.0]).reshape([3,1])
+                Rf = self.Rf(-self.asteroid_axis, self.last_R)
+                self.segments.append(QSplinePR(dur, self.last_pos, vd, self.last_R, \
+                                                    self.last_pos, vd, Rf))
+                # add a hold, just for fun.
+                self.segments.append(QHoldPR(1.0, self.last_pos, Rf))
+
             self.segment_index += 1
 
         if (self.segment_index >= len(self.segments)):
@@ -160,7 +170,17 @@ class Generator:
         R = R_from_T(T)
         # weighted pseudoinverse
         gam = 0.2;
-        J_inv = Jp.T @ np.linalg.inv(Jp @ Jp.T + gam*gam*np.eye(6));
+        J_inv = np.array([])
+        if (segment.get_type() == "both"):
+            J_inv = Jp.T @ np.linalg.inv(Jp @ Jp.T + gam*gam*np.eye(6));
+        elif (segment.get_type() == "position_only"):
+            Jp = Jp[0:3, 0:7]
+            print(Jp) # just to double check
+            J_inv = Jp.T @ np.linalg.inv(Jp @ Jp.T + gam*gam*np.eye(3));
+        else:
+            print("I don't recognize you!")
+            while (True):
+                pass
         # J_inv = np.linalg.pinv(Jp)
 
         # desired terms
@@ -176,7 +196,11 @@ class Generator:
         prdot = vd + self.lam * ep
         wrdot = wd + self.lam * eR
 
-        qdot = J_inv @ np.vstack((prdot, wrdot))
+        qdot = np.array([])
+        if (segment.get_type() == "both"):
+            qdot = J_inv @ np.vstack((prdot, wrdot))
+        elif (segment.get_type() == "position_only"):
+            qdot = J_inv @ prdot
 
         # discretely integrate
         q = (self.last_q + dt * qdot)
@@ -185,7 +209,6 @@ class Generator:
         self.last_pos = p # updated every time the arm moves!
         self.last_vel = vd
         self.last_R = R
-        self.last_wx = wd
         self.last_q = q
 
         # Create and send the command message.  Note the names have to
@@ -204,7 +227,7 @@ class Generator:
     def Rf(self, eyd, R): # aligns y axis to path of incoming asteroid, eyd (np array)
         eyc = R[0:3,1:2] # current y axis
         axis = np.cross(eyc, eyd, axis=0) # axis to rotate eyc about to meet eyd
-        
+
         # assume eyc and eyd to both be normed
         angle = np.arccos(np.dot(eyc, eyd)) # angle to rotate about axis
 
