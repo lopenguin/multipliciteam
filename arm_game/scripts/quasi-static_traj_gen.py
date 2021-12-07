@@ -153,7 +153,7 @@ class Generator:
             # only add a segment to change orientation if we just did a position only segment!
             if (self.segments[self.segment_index].get_type() == "position_only"):
                 vd = np.array([0.0,0.0,0.0]).reshape([3,1])
-                Rf = self.Rf(-self.asteroid_axis, self.last_R)
+                Rf = self.Rf(-self.asteroid_direction, self.last_R)
                 self.segments.append(QSplinePR(dur, self.last_pos, vd, self.last_R, \
                                                     self.last_pos, vd, Rf))
                 # add a hold, just for fun.
@@ -229,7 +229,8 @@ class Generator:
         axis = np.cross(eyc, eyd, axis=0) # axis to rotate eyc about to meet eyd
 
         # assume eyc and eyd to both be normed
-        angle = np.arccos(np.dot(eyc, eyd)) # angle to rotate about axis
+        angle = np.arccos(eyc.T @ eyd)[0] # angle to rotate about axis
+        print(angle)
 
         return R_from_axisangle(axis, angle) @ R
 
