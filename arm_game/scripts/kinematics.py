@@ -73,6 +73,8 @@ def R_from_axisangle(axis, theta):
 def axisangle_from_R(R):
     axis = (R + R.T - (np.trace(R) - 1)*np.eye(3))[0:3, 0]
     axis = axis / np.linalg.norm(axis)
+    if (np.trace(R) > 2 or np.trace(R) < -2):
+        angle = 0;
     angle = np.arccos((np.trace(R) - 1)/2)
     return (axis, angle)
 
@@ -228,7 +230,7 @@ class Kinematics:
 
                 # Advance the "active/moving" joint number
                 index += 1
-                
+
 
             elif (joint.type != 'fixed'):
                 # There shouldn't be any other types...

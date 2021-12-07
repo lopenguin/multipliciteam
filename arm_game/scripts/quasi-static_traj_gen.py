@@ -11,6 +11,7 @@
 #
 import rospy
 import numpy as np
+import random
 
 from sensor_msgs.msg     import JointState
 from std_msgs.msg        import Float64
@@ -80,7 +81,7 @@ class Generator:
 
         # starting guess and last values
         self.last_q = np.array([0.0, np.pi/2, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape([7,1])
-        self.lam = 20.0
+        self.lam = 40.0
 
         self.last_pos = np.array([1.0, 1.0, 1.0]).reshape([3,1]) # updated every time the arm moves!
         self.last_vel = np.array([0.0, 0.0, 0.0]).reshape([3,1])
@@ -117,19 +118,17 @@ class Generator:
         # TODO: select the first "reachable" asteroid using a spline with
         # maximum q_dot_dot and q_dot implemented.
         intercept_times = self.asteroid.get_intercept_times(t)
-        t_target = intercept_times[int(1*len(intercept_times)/4)] # Todo: update
+        t_target = intercept_times[int((np.random.random()/2 + 0.1)*len(intercept_times))] # Todo: update
         t_target = float(t_target)
         # current positions
         pc = self.last_pos
         vc = self.last_vel
         Rxc = self.last_R
-        wxc = self.last_wx
         # targets
         pd = self.asteroid.get_position(t_target)
-        vd = self.asteroid.get_velocity(t_target)
+        vd = np.array([0.0,0.0,0.0]).reshape([3,1]) #self.asteroid.get_velocity(t_target)
         Rxd = -self.asteroid.get_direction()
         Rxd = np.array([[0.0, 0.0, 1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
-        wxd = np.array([0.0, 0.0, 0.0]).reshape([3,1])
 
         self.segments.append(\
             QSplinePR(t_target - t, pc, vc, Rxc, pd, vd, Rxd))
@@ -137,8 +136,8 @@ class Generator:
         # velocity match according to a critically damped spring!
         # self.segments.append(\
         #     CritDampParam('''Tyler stuff goes here'''))
-        # self.segments.append(QHoldPR(1.0, pd, Rxd)); # for quasi-static
-        self.segments.append(CritDampPR(1.0, pd, vd, Rxd)); # for dynamic
+        self.segments.append(QHoldPR(1.0, pd, Rxd)); # for quasi-static
+        # self.segments.append(CritDampPR(1.0, pd, vd, Rxd)); # for dynamic
 
     '''
     Updates the arm position.
@@ -160,7 +159,7 @@ class Generator:
         p = p_from_T(T)
         R = R_from_T(T)
         # weighted pseudoinverse
-        gam = 0.8;
+        gam = 0.2;
         J_inv = Jp.T @ np.linalg.inv(Jp @ Jp.T + gam*gam*np.eye(6));
         # J_inv = np.linalg.pinv(Jp)
 
