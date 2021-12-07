@@ -11,7 +11,7 @@
 #
 import rospy
 import numpy as np
-import random
+import math
 
 from sensor_msgs.msg     import JointState
 from std_msgs.msg        import Float64
@@ -81,7 +81,7 @@ class Generator:
 
         # starting guess and last values
         self.last_q = np.array([0.0, np.pi/2, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape([7,1])
-        self.lam = 7.05
+        self.lam = 7.0
 
         self.last_pos = np.array([1.0, 1.0, 1.0]).reshape([3,1]) # updated every time the arm moves!
         self.last_vel = np.array([0.0, 0.0, 0.0]).reshape([3,1])
@@ -173,7 +173,7 @@ class Generator:
         # weighted pseudoinverse
         J_inv = np.array([])
         if (segment.get_type() == "both"):
-            gam = 0.03
+            gam = 0.05
             J_inv = Jp.T @ np.linalg.inv(Jp @ Jp.T + gam*gam*np.eye(6));
         elif (segment.get_type() == "position_only"):
             gam = 0.05
@@ -191,7 +191,7 @@ class Generator:
 
         # error terms
         ep = self.ep(pd, p)
-        print(ep)
+        # print(ep)
         eR = self.eR(Rd, R) # gives a 3 x 1 vector
 
         # Compute velocity
@@ -229,10 +229,12 @@ class Generator:
     def Rf(self, eyd, R): # aligns y axis to path of incoming asteroid, eyd (np array)
         eyc = R[0:3,1:2] # current y axis
         axis = np.cross(eyc, eyd, axis=0).reshape([3]) # axis to rotate eyc about to meet eyd
+        norm = np.linalg.norm(axis) # gives sin of angle between them
 
         # assume eyc and eyd to both be normed
-        angle = np.arccos(eyc.T @ eyd)[0] # angle to rotate about axis
-        axis /= np.linalg.norm(axis)
+        cos = (eyc.T @ eyd)[0] # gives cosine of angle between them
+        angle = math.atan2(norm, cos) # potentially more robust way of determining angle
+        axis /= norm
 
         return R_from_axisangle(axis, angle) @ R
 
