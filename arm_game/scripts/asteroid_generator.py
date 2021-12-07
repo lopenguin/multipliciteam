@@ -6,7 +6,7 @@
 import rospy
 
 import rospkg
-from gazebo_msgs.srv import SpawnModel, DeleteModel, GetModelState, GetPhysicsProperties
+from gazebo_msgs.srv import SpawnModel, DeleteModel, GetModelState, GetPhysicsProperties, GetWorldProperties
 from geometry_msgs.msg import Point, Pose, Quaternion
 import numpy as np
 
@@ -25,6 +25,24 @@ class AsteroidHandler:
         rospack = rospkg.RosPack()
         package_path = rospack.get_path('arm_game')
         self.asteroid_model_path = package_path + "/meshes/RoboCup 3D Simulation Ball/model.sdf"
+
+        # Delete all existing asteroids in Gazebo
+        try:
+            get_world_service = rospy.ServiceProxy('/gazebo/get_world_properties', GetWorldProperties)
+            models = get_world_service().model_names
+
+            for each_model in models:
+                if each_model is not None and "asteroid" in each_model:
+                    model_ID = each_model.replace('asteroid', '')
+                    self.asteroid_ID_list.append(model_ID)
+
+        except rospy.ServiceException as e:
+            rospy.loginfo("Get Physics Properties State service call failed:  {0}".format(e))
+
+        self.delete_all_asteroids()
+
+
+
 
     def generate_asteroid(self, x, y, z):
         """
