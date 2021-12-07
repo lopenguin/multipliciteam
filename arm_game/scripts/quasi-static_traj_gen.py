@@ -81,12 +81,17 @@ class Generator:
 
         # starting guess and last values
         self.last_q = np.array([0.0, np.pi/2, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape([7,1])
-        self.lam = 40.0
+        self.lam = 60.0
+        self.lam2 = 5.0
+        self.gam = 0.5;
 
         self.last_pos = np.array([1.0, 1.0, 1.0]).reshape([3,1]) # updated every time the arm moves!
         self.last_vel = np.array([0.0, 0.0, 0.0]).reshape([3,1])
         self.last_R = np.array([[0.0, 0.0, 1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
         self.last_wx = np.array([0.0, 0.0, 0.0]).reshape([3,1])
+
+        # Keep joints centered
+        self.qgoal = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape((7, 1))
 
         # Also reset the trajectory, starting at the beginning.
         self.reset()
@@ -121,10 +126,12 @@ class Generator:
         # t_target = intercept_times[int((np.random.random()/2 + 0.1)*len(intercept_times))] # Todo: update
         t_target = intercept_times[int(0.5*len(intercept_times))]
         t_target = float(t_target)
+
         # current positions
         pc = self.last_pos
         vc = self.last_vel
         Rxc = self.last_R
+
         # targets
         pd = self.asteroid.get_position(t_target)
         vd = np.array([0.0,0.0,0.0]).reshape([3,1]) #self.asteroid.get_velocity(t_target)
@@ -132,7 +139,7 @@ class Generator:
         Rxd = np.array([[0.0, 0.0, 1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
 
         self.segments.append(\
-            QSplinePR(t_target - t, pc, vc, Rxc, pd, vd, Rxd))
+            QSplinePR((t_target - t)/2, pc, vc, Rxc, pd, vd, Rxd))
 
         # velocity match according to a critically damped spring!
         # self.segments.append(\
@@ -160,14 +167,15 @@ class Generator:
         Jp = np.vstack((Jp[0:5, 0:7]))#,Jp[,0:7]))
         p = p_from_T(T)
         R = R_from_T(T)
+
         # weighted pseudoinverse
-        gam = 0.5;
-        J_inv = Jp.T @ np.linalg.inv(Jp @ Jp.T + gam*gam*np.eye(5));
+        J_inv = Jp.T @ np.linalg.inv(Jp @ Jp.T + self.gam*self.gam*np.eye(5));
         # J_inv = np.linalg.pinv(Jp)
 
         # desired terms
         (pd, vd) = segment.evaluate_p(t - self.t0)
         (Rd, wd) = segment.evaluate_R(t - self.t0)
+
 
         # error terms
         ep = self.ep(pd, p)
@@ -176,11 +184,15 @@ class Generator:
         eR = np.vstack((eR[0],eR[1]))
         wd = np.vstack((wd[0],wd[1]))
 
+        # Secondary Task # TODO
+        qdot2 = self.lam2 * (self.qgoal - self.last_q)
+        xrdot = np.vstack((vd, wd)) + self.lam2 * np.vstack((ep, eR))
+
         # Compute velocity
         prdot = vd + self.lam * ep
         wrdot = wd + self.lam * eR
 
-        qdot = J_inv @ np.vstack((prdot, wrdot))
+        qdot = J_inv @ np.vstack((prdot, wrdot)) + (np.eye(7) - J_inv @ Jp) @ qdot2
 
         # discretely integrate
         q = (self.last_q + dt * qdot)
