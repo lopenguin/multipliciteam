@@ -81,7 +81,7 @@ class Generator:
 
         # starting guess and last values
         self.last_q = np.array([0.0, np.pi/2, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape([7,1])
-        self.lam = 40.0
+        self.lam = 7.0
 
         self.last_pos = np.array([1.0, 1.0, 1.0]).reshape([3,1]) # updated every time the arm moves!
         self.last_vel = np.array([0.0, 0.0, 0.0]).reshape([3,1])
@@ -119,7 +119,8 @@ class Generator:
         # TODO: select the first "reachable" asteroid using a spline with
         # maximum q_dot_dot and q_dot implemented.
         intercept_times = self.asteroid.get_intercept_times(t)
-        t_target = intercept_times[int((np.random.random()/2 + 0.1)*len(intercept_times))] # Todo: update
+        # t_target = intercept_times[int((np.random.random()/2 + 0.1)*len(intercept_times))] # Todo: update
+        t_target = intercept_times[int(0.5*len(intercept_times))] # Todo: update
         t_target = float(t_target)
         # current positions
         pc = self.last_pos
@@ -128,11 +129,11 @@ class Generator:
         # targets
         pd = self.asteroid.get_position(t_target)
         vd = np.array([0.0,0.0,0.0]).reshape([3,1]) #self.asteroid.get_velocity(t_target)
-        self.asteroid_direction = -self.asteroid.get_direction()
+        self.asteroid_direction = self.asteroid.get_direction()
         Rxd = np.array([[0.0, 0.0, 1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
 
         self.segments.append(\
-            QSplinePOnly(t_target - t, pc, vc, pd, vd))
+            QSplinePOnly((t_target - t) / 2, pc, vc, pd, vd))
 
         # velocity match according to a critically damped spring!
         # self.segments.append(\
@@ -149,6 +150,7 @@ class Generator:
 
         dur = self.segments[self.segment_index].duration()
         if (t - self.t0 >= dur):
+            print(self.segment_index)
             self.t0 = (self.t0 + dur)
             # only add a segment to change orientation if we just did a position only segment!
             if (self.segments[self.segment_index].get_type() == "position_only"):
@@ -162,7 +164,6 @@ class Generator:
             self.segment_index += 1
 
         if (self.segment_index >= len(self.segments)):
-            print(self.segment_index)
             self.update_asteroid(t, dt)
         segment = self.segments[self.segment_index]
 
@@ -170,11 +171,12 @@ class Generator:
         p = p_from_T(T)
         R = R_from_T(T)
         # weighted pseudoinverse
-        gam = 0.2;
         J_inv = np.array([])
         if (segment.get_type() == "both"):
+            gam = 0.05
             J_inv = Jp.T @ np.linalg.inv(Jp @ Jp.T + gam*gam*np.eye(6));
         elif (segment.get_type() == "position_only"):
+            gam = 0.05
             Jp = Jp[0:3, 0:7]
             J_inv = Jp.T @ np.linalg.inv(Jp @ Jp.T + gam*gam*np.eye(3));
         else:
@@ -189,7 +191,7 @@ class Generator:
 
         # error terms
         ep = self.ep(pd, p)
-        # print(ep)
+        print(ep)
         eR = self.eR(Rd, R) # gives a 3 x 1 vector
 
         # Compute velocity
