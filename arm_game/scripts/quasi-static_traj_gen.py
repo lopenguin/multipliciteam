@@ -25,7 +25,7 @@ from kinematics import Kinematics, p_from_T, R_from_T, Rx, Ry, Rz
 # but then we'd have to write "kinematics.p_from_T()" ...
 
 # Import the Spline stuff:
-from splines import  QSplinePR, QHoldPR, QuinticSpline
+from splines import  QSplinePR, QHoldPR, QuinticSpline, CritDampPR
 
 
 #
@@ -117,7 +117,7 @@ class Generator:
         # TODO: select the first "reachable" asteroid using a spline with
         # maximum q_dot_dot and q_dot implemented.
         intercept_times = self.asteroid.get_intercept_times(t)
-        t_target = intercept_times[int(len(intercept_times)/2)] # Todo: update
+        t_target = intercept_times[int(1*len(intercept_times)/4)] # Todo: update
         t_target = float(t_target)
         # current positions
         pc = self.last_pos
@@ -126,19 +126,19 @@ class Generator:
         wxc = self.last_wx
         # targets
         pd = self.asteroid.get_position(t_target)
-        vd = np.array([0.0,0.0,0.0]).reshape([3,1])#self.asteroid.get_velocity(t_target)
+        vd = self.asteroid.get_velocity(t_target)
         Rxd = -self.asteroid.get_direction()
         Rxd = np.array([[0.0, 0.0, 1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
         wxd = np.array([0.0, 0.0, 0.0]).reshape([3,1])
 
         self.segments.append(\
-            QSplinePR(t_target - t, pc, vc, Rxc, pd, vd, Rxd)) # TODO: FIX (eliminate Rxd)
+            QSplinePR(t_target - t, pc, vc, Rxc, pd, vd, Rxd))
 
         # velocity match according to a critically damped spring!
         # self.segments.append(\
         #     CritDampParam('''Tyler stuff goes here'''))
-        # self.segments.append(QHoldPR(1.0, pd, Rxd)); # for quasi-static # TEMP
-        self.segments.append(QHoldPR(1.0, pd, Rxd)); # for quasi-static
+        # self.segments.append(QHoldPR(1.0, pd, Rxd)); # for quasi-static
+        self.segments.append(CritDampPR(1.0, pd, vd, Rxd)); # for dynamic
 
     '''
     Updates the arm position.
@@ -154,6 +154,7 @@ class Generator:
 
         if (self.segment_index >= len(self.segments)):
             self.update_asteroid(t, dt)
+        segment = self.segments[self.segment_index]
 
         (T, Jp) = self.kin.fkin(self.last_q)
         p = p_from_T(T)
@@ -164,8 +165,8 @@ class Generator:
         # J_inv = np.linalg.pinv(Jp)
 
         # desired terms
-        (pd, vd) = self.segments[self.segment_index].evaluate_p(t - self.t0)
-        (Rd, wd) = self.segments[self.segment_index].evaluate_R(t - self.t0)
+        (pd, vd) = segment.evaluate_p(t - self.t0)
+        (Rd, wd) = segment.evaluate_R(t - self.t0)
 
         # error terms
         ep = self.ep(pd, p)
@@ -175,6 +176,7 @@ class Generator:
         # Compute velocity
         prdot = vd + self.lam * ep
         wrdot = wd + self.lam * eR
+
         qdot = J_inv @ np.vstack((prdot, wrdot))
 
         # discretely integrate

@@ -220,7 +220,6 @@ class QSplinePR(SegmentPR):
         SegmentPR.__init__(self, T)
 
         self.p_spline = QuinticSpline(p0, v0, 0 * v0, pf, vf, 0 * vf, T)
-        # ^ this spline is causing problems. For some reason it is moving stuff! WHYYYY
 
         self.R_spline = QuinticSpline(0.0, 0.0, 0.0, 1.0, 0.0, 0.0, T)
 
@@ -239,10 +238,11 @@ class QSplinePR(SegmentPR):
         if (np.all(self.R0 == self.Rf)):
             return (self.R0, np.array([0.0,0.0,0.0]).reshape([3, 1]))
         R = R_from_axisangle(self.axis, angle) @ self.R0
-        print(R)
         w = np.reshape(self.axis * sdot, [3,1])
         return (R,w)
 
+    def get_type(self):
+        return "both"
 
 '''
 Hold subclass for quintic spline
@@ -252,6 +252,16 @@ Hold subclass for quintic spline
 class QHoldPR(QSplinePR):
     def __init__(self, T, p, R):
         QSplinePR.__init__(self, T, p, 0*p, R, p, 0*p, R)
+
+'''
+Extra segment to ignore orientation
+'''
+class QSplinePOnly(QSplinePR):
+    def __init__(self, T, p0, v0, pf, vf):
+        QSplinePR.__init__(self, T, p0, v0, np.eye(3), pf, vf, np.eye(3))
+
+    def get_type(self):
+        return "position_only"
 
 '''
 Critically dampen a velocity from initial velocity to final velocity. Maintain rotation
@@ -272,7 +282,7 @@ class CritDampPR(SegmentPR):
         self.v0 = v0
         self.R0 = R0
         self.Rf = R0
-        self.gamma
+        self.gamma = 0.1
 
         R_tot = (self.R0).T @ self.Rf  # TODO check order!
         (self.axis, self.tot_angle) = axisangle_from_R(R_tot)
@@ -284,7 +294,10 @@ class CritDampPR(SegmentPR):
 
     def evaluate_R(self, t):
         (s, sdot) = self.R_spline.evaluate(t)
+        if (np.all(self.R0 == self.Rf)):
+            return (self.R0, np.array([0.0,0.0,0.0]).reshape([3, 1]))
         angle = self.tot_angle * s
         R = R_from_axisangle(self.axis, angle)
         w = self.axis * sdot
+        print(R, w)
         return (R, w)
