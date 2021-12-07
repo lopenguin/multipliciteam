@@ -122,7 +122,7 @@ class Generator:
         # current positions
         pc = self.last_pos
         vc = self.last_vel
-        Rxc = self.last_R # vector of x_tip direction
+        Rxc = self.last_R
         wxc = self.last_wx
         # targets
         pd = self.asteroid.get_position(t_target)
@@ -132,8 +132,7 @@ class Generator:
         wxd = np.array([0.0, 0.0, 0.0]).reshape([3,1])
 
         self.segments.append(\
-            QSplinePR(t_target - t, pc, vc, Rxd, pd, vd, Rxd)) # TODO: FIX (eliminate Rxd)
-        print(pd, pc)
+            QSplinePR(t_target - t, pc, vc, Rxc, pd, vd, Rxd)) # TODO: FIX (eliminate Rxd)
 
         # velocity match according to a critically damped spring!
         # self.segments.append(\
@@ -219,7 +218,7 @@ class Generator:
         self.last_q = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape([7,1])
         self.last_pos = np.array([1.0, 1.0, 1.0]).reshape([3,1]) # updated every time the arm moves!
         self.last_vel = np.array([0.0, 0.0, 0.0]).reshape([3,1])
-        self.last_R = np.array([1.0, 0.0, 0.0]).reshape([3,1])
+        # self.last_R = np.array([1.0, 0.0, 0.0]).reshape([3,1])
         self.last_wx = np.array([0.0, 0.0, 0.0]).reshape([3,1])
 
 #
