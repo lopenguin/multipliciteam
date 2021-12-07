@@ -220,6 +220,7 @@ class QSplinePR(SegmentPR):
         SegmentPR.__init__(self, T)
 
         self.p_spline = QuinticSpline(p0, v0, 0 * v0, pf, vf, 0 * vf, T)
+        # ^ this spline is causing problems. For some reason it is moving stuff! WHYYYY
 
         self.R_spline = QuinticSpline(0.0, 0.0, 0.0, 1.0, 0.0, 0.0, T)
 
@@ -229,6 +230,7 @@ class QSplinePR(SegmentPR):
         (self.axis, self.tot_angle) = axisangle_from_R(R_tot)
 
     def evaluate_p(self, t):
+        print(self.p_spline.evaluate(t))
         return self.p_spline.evaluate(t)
 
     def evaluate_R(self, t):

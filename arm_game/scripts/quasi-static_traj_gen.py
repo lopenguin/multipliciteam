@@ -84,7 +84,7 @@ class Generator:
 
         self.last_pos = np.array([1.0, 1.0, 1.0]).reshape([3,1]) # updated every time the arm moves!
         self.last_vel = np.array([0.0, 0.0, 0.0]).reshape([3,1])
-        self.last_xdir = np.array([1.0, 0.0, 0.0]).reshape([3,1])
+        self.last_R = np.array([[0.0, 0.0, 1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
         self.last_wx = np.array([0.0, 0.0, 0.0]).reshape([3,1])
 
         # Also reset the trajectory, starting at the beginning.
@@ -122,22 +122,23 @@ class Generator:
         # current positions
         pc = self.last_pos
         vc = self.last_vel
-        Rxc = self.last_xdir # vector of x_tip direction
+        Rxc = self.last_R # vector of x_tip direction
         wxc = self.last_wx
         # targets
         pd = self.asteroid.get_position(t_target)
-        vd = self.asteroid.get_velocity(t_target)
+        vd = np.array([0.0,0.0,0.0]).reshape([3,1])#self.asteroid.get_velocity(t_target)
         Rxd = -self.asteroid.get_direction()
         Rxd = np.array([[0.0, 0.0, 1.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]])
         wxd = np.array([0.0, 0.0, 0.0]).reshape([3,1])
 
-        # self.segments.append(\
-        #     QSplinePR(t_target - t, pc, vc, Rxc, pd, vd, Rxd))
+        self.segments.append(\
+            QSplinePR(t_target - t, pc, vc, Rxd, pd, vd, Rxd)) # TODO: FIX (eliminate Rxd)
+        print(pd, pc)
 
         # velocity match according to a critically damped spring!
         # self.segments.append(\
         #     CritDampParam('''Tyler stuff goes here'''))
-        self.segments.append(QHoldPR(1.0, pd, Rxd)); # for quasi-static # TEMP
+        # self.segments.append(QHoldPR(1.0, pd, Rxd)); # for quasi-static # TEMP
         self.segments.append(QHoldPR(1.0, pd, Rxd)); # for quasi-static
 
     '''
@@ -159,7 +160,7 @@ class Generator:
         p = p_from_T(T)
         R = R_from_T(T)
         # weighted pseudoinverse
-        gam = 0.1;
+        gam = 0.8;
         J_inv = Jp.T @ np.linalg.inv(Jp @ Jp.T + gam*gam*np.eye(6));
         # J_inv = np.linalg.pinv(Jp)
 
@@ -169,7 +170,7 @@ class Generator:
 
         # error terms
         ep = self.ep(pd, p)
-        print(ep)
+        # print(ep)
         eR = self.eR(Rd, R) # gives a 3 x 1 vector
 
         # Compute velocity
@@ -181,11 +182,11 @@ class Generator:
         q = (self.last_q + dt * qdot)
 
         # save info
+        self.last_pos = p # updated every time the arm moves!
+        self.last_vel = vd
+        self.last_R = R
+        self.last_wx = wd
         self.last_q = q
-        self.last_p = p #self.pd(s)
-        self.last_R = R #self.Rd(s)
-        self.last_v = vd
-        self.last_w = wd
 
         # Create and send the command message.  Note the names have to
         # match the joint names in the URDF.  And their number must be
@@ -218,7 +219,7 @@ class Generator:
         self.last_q = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape([7,1])
         self.last_pos = np.array([1.0, 1.0, 1.0]).reshape([3,1]) # updated every time the arm moves!
         self.last_vel = np.array([0.0, 0.0, 0.0]).reshape([3,1])
-        self.last_xdir = np.array([1.0, 0.0, 0.0]).reshape([3,1])
+        self.last_R = np.array([1.0, 0.0, 0.0]).reshape([3,1])
         self.last_wx = np.array([0.0, 0.0, 0.0]).reshape([3,1])
 
 #
