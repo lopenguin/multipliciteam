@@ -89,7 +89,7 @@ class Generator:
         # starting guess and last values
         self.last_q = np.array([0.0, 0.0, 0.0, np.pi/2, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape([9,1])
         self.lam = 60.0
-        self.lam2 = 5.0
+        self.lam2 = 3.0
         self.gam = 0.5
 
         self.last_pos = np.array([1.0, 1.0, 1.0]).reshape([3,1]) # updated every time the arm moves!
@@ -98,7 +98,7 @@ class Generator:
         self.last_wx = np.array([0.0, 0.0, 0.0]).reshape([3,1])
 
         # Keep joints centered
-        self.qgoal = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape((9, 1))
+        self.qgoal = np.array([0.0, 0.0, 0.0, np.pi/2, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape((9, 1))
 
         # Also reset the trajectory, starting at the beginning.
         self.reset()
