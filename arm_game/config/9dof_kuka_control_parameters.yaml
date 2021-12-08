@@ -76,11 +76,11 @@ iiwa7:
   # PD gains to control to the position (angle) commands.
   j0x_pd_control:
     type: effort_controllers/JointPositionController
-    joint: iiwa7_joint_1
+    joint: iiwa7_joint_0x
     pid: {p: 10000.0, i: 0.0, d: 10.0}
   j0y_pd_control:
     type: effort_controllers/JointPositionController
-    joint: iiwa7_joint_2
+    joint: iiwa7_joint_0y
     pid: {p: 10000.0, i: 0.0, d: 10.0}
   j1_pd_control:
     type: effort_controllers/JointPositionController

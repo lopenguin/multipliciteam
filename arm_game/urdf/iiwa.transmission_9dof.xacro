@@ -25,6 +25,18 @@
       </actuator>
     </transmission>
 
+    <transmission name="${robot_name}_tran_1">
+      <robotNamespace>/${robot_name}</robotNamespace>
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${robot_name}_joint_1">
+	<hardwareInterface>${hardware_interface}</hardwareInterface>
+      </joint>
+      <actuator name="${robot_name}_motor_1">
+	<hardwareInterface>${hardware_interface}</hardwareInterface>
+	<mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+
     <transmission name="${robot_name}_tran_2">
       <robotNamespace>/${robot_name}</robotNamespace>
       <type>transmission_interface/SimpleTransmission</type>

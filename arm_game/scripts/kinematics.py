@@ -224,7 +224,7 @@ class Kinematics:
 
                 # Save the joint axis. The URDF <axis> is given in
                 # the local frame, so multiply by the local R matrix.
-                elist.append(R_FROM_T(T) @ e_from_URDF_axis(joint.axis))
+                elist.append(R_from_T(T) @ e_from_URDF_axis(joint.axis))
 
                 # Save the joint type
                 jlist.append('prismatic')
