@@ -2,9 +2,9 @@
 <robot xmlns:xacro="http://www.ros.org/wiki/xacro">
 
   <!-- Import all Gazebo-customization elements, including Gazebo colors -->
-  <xacro:include filename="$(find arm_game)/urdf/iiwa.gazebo.xacro" />
+  <xacro:include filename="$(find arm_game)/urdf/iiwa.gazebo_9dof.xacro" />
   <!-- Import Transmissions -->
-  <xacro:include filename="$(find arm_game)/urdf/iiwa.transmission.xacro" />
+  <xacro:include filename="$(find arm_game)/urdf/iiwa.transmission_9dof.xacro" />
   <!-- Include Utilities -->
   <xacro:include filename="$(find arm_game)/urdf/utilities.xacro" />
 
@@ -55,6 +55,11 @@
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <axis xyz="1 0 0"/>
       <limit  lower="-1"  upper="1" effort="100" velocity="10"/>
+      <safety_controller soft_lower_limit="${-173 / 180}"
+                         soft_upper_limit="${173 / 180}"
+                         k_position="${safety_controller_k_pos}"
+                         k_velocity="${safety_controller_k_vel}"/>
+      <dynamics damping="${joint_damping}"/>
     </joint>
 
     <link name="${robot_name}_link_0a">
@@ -72,6 +77,11 @@
       <origin xyz="0 0 0" rpy="0 0 0"/>
       <axis xyz="0 1 0"/>
       <limit  lower="-1"  upper="1" effort="100" velocity="10"/>
+      <safety_controller soft_lower_limit="${-173 / 180}"
+                         soft_upper_limit="${173 / 180}"
+                         k_position="${safety_controller_k_pos}"
+                         k_velocity="${safety_controller_k_vel}"/>
+      <dynamics damping="${joint_damping}"/>
     </joint>
 
     <link name="${robot_name}_link_0b">
