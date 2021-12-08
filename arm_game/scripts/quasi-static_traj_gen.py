@@ -80,10 +80,10 @@ class Generator:
         self.t0 = 0.0
 
         # starting guess and last values
-        self.last_q = np.array([0.0, np.pi/2, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape([7,1])
+        self.last_q = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape([7,1])
         self.lam = 60.0
-        self.lam2 = 5.0
-        self.gam = 0.5;
+        self.lam2 = 0.3
+        self.gam = 0.2;
 
         self.last_pos = np.array([1.0, 1.0, 1.0]).reshape([3,1]) # updated every time the arm moves!
         self.last_vel = np.array([0.0, 0.0, 0.0]).reshape([3,1])
@@ -91,7 +91,7 @@ class Generator:
         self.last_wx = np.array([0.0, 0.0, 0.0]).reshape([3,1])
 
         # Keep joints centered
-        self.qgoal = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape((7, 1))
+        self.qgoal = np.array([0.0, np.pi/2, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape((7, 1))
 
         # Also reset the trajectory, starting at the beginning.
         self.reset()
@@ -182,10 +182,16 @@ class Generator:
         # print(ep)
         eR = self.eR(Rd, R) # gives a 3 x 1 vector
         eR = np.vstack((eR[0],eR[1]))
+        print(eR)
         wd = np.vstack((wd[0],wd[1]))
 
         # Secondary Task # TODO
         qdot2 = self.lam2 * (self.qgoal - self.last_q)
+        qdot2[0,0] = 0.0
+        qdot2[2,0] = 0.0
+        qdot2[4,0] = 0.0
+        qdot2[5,0] = 0.0
+        qdot2[6,0] = 0.0
         xrdot = np.vstack((vd, wd)) + self.lam2 * np.vstack((ep, eR))
 
         # Compute velocity

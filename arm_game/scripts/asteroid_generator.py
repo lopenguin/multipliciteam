@@ -218,8 +218,8 @@ class Asteroid:
         self.handler = handler
         if (asteroid_ID is None):
             # s, self.id = self.handler.generate_asteroid_random(0.0, 0.0, 5.0, 0.8)
-            s, self.id = self.handler.generate_asteroid(-0.8, 0.0, 5.0)
-            # s, self.id = self.handler.generate_asteroid_torus(0.8, 5.0, 0.15)
+            # s, self.id = self.handler.generate_asteroid(0.8, 0.0, 5.0)
+            s, self.id = self.handler.generate_asteroid_torus(1.5, 5.0, 0.15)
         else:
             self.id = asteroid_ID
 

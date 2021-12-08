@@ -98,7 +98,7 @@ class Generator:
         self.last_wx = np.array([0.0, 0.0, 0.0]).reshape([3,1])
 
         # Keep joints centered
-        self.qgoal = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape((9, 1))
+        self.qgoal = np.array([0.0, 0.0, 0.0, np.pi/2, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape((9, 1))
 
         # Also reset the trajectory, starting at the beginning.
         self.reset()
