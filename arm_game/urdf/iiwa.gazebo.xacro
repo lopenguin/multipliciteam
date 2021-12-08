@@ -67,10 +67,10 @@
       <mu1>0.2</mu1>
       <mu2>0.2</mu2>
     </gazebo>
-	
-	    <!-- Bucket -->
+
+    <!-- Bucket -->
     <gazebo reference="${robot_name}_bucket">
-      <material>Gazebo/Grey</material>
+      <material>Gazebo/Red</material>
       <mu1>0.2</mu1>
       <mu2>0.2</mu2>
     </gazebo>

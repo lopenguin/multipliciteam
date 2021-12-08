@@ -31,7 +31,7 @@
       <mu1>0.2</mu1>
       <mu2>0.2</mu2>
     </gazebo>
-    
+
     <!-- Link1 -->
     <gazebo reference="${robot_name}_link_1">
       <material>Gazebo/Orange</material>
@@ -78,6 +78,13 @@
     <!-- Link7 -->
     <gazebo reference="${robot_name}_link_7">
       <material>Gazebo/Grey</material>
+      <mu1>0.2</mu1>
+      <mu2>0.2</mu2>
+    </gazebo>
+
+    <!-- Bucket -->
+    <gazebo reference="${robot_name}_bucket">
+      <material>Gazebo/Red</material>
       <mu1>0.2</mu1>
       <mu2>0.2</mu2>
     </gazebo>
