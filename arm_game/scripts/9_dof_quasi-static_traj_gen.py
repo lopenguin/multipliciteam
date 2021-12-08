@@ -89,7 +89,7 @@ class Generator:
         # starting guess and last values
         self.last_q = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape([9,1])
         self.lam = 100.0
-        self.lam2 = 10
+        self.lam2 = 10.0
         self.gam = 0.5
 
         self.last_pos = np.array([1.0, 1.0, 1.0]).reshape([3,1]) # updated every time the arm moves!
