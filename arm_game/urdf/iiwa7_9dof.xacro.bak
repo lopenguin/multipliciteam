@@ -357,18 +357,18 @@
     <joint name="${robot_name}_joint_ee" type="fixed">
       <parent link="${robot_name}_link_7"/>
       <child link="${robot_name}_bucket"/>
-      <origin xyz="0 0 0.16" rpy="0 0 0"/>
+      <origin xyz="0 0 0.14" rpy="0 0 0"/>
     </joint>
 	
 	<link name="${robot_name}_bucket">
       <inertial>
-        <origin xyz="0.1135 -0.04 0.12" rpy="0 ${PI} 0"/>
+        <origin xyz="0.1135 -0.04 0.14" rpy="0 ${PI} 0"/>
         <mass value="4"/>
         <inertia ixx="0.01464"  ixy="0.0005912"  ixz="0" iyy="0.01465" iyz="0" izz="0.002872" />
       </inertial>
 
       <visual>
-        <origin xyz="0.1135 -0.04 0.12" rpy="0 ${PI} 0"/>
+        <origin xyz="0.1135 -0.04 0.14" rpy="0 ${PI} 0"/>
         <geometry>
           <mesh filename="package://arm_game/meshes/iiwa7/visual/bucket.stl"/>
         </geometry>
@@ -376,7 +376,7 @@
       </visual>
 
       <collision>
-        <origin xyz="0.1135 -0.04 0.12" rpy="0 ${PI} 0"/>
+        <origin xyz="0.1135 -0.04 0.14" rpy="0 ${PI} 0"/>
         <geometry>
           <mesh filename="package://arm_game/meshes/iiwa7/collision/bucket.stl"/>
         </geometry>
