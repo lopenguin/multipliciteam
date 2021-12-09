@@ -87,9 +87,9 @@ class Generator:
         self.t0 = 0.0
 
         # starting guess and last values
-        self.last_q = np.array([0.0, 0.0, 0.0, np.pi/2, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape([9,1])
-        self.lam = 60.0
-        self.lam2 = 3.0
+        self.last_q = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]).reshape([9,1])
+        self.lam = 100.0
+        self.lam2 = 10.0
         self.gam = 0.5
 
         self.last_pos = np.array([1.0, 1.0, 1.0]).reshape([3,1]) # updated every time the arm moves!
@@ -193,6 +193,8 @@ class Generator:
 
         # Secondary Task # TODO
         qdot2 = self.lam2 * (self.qgoal - self.last_q)
+        # qdot2[0,0] = 0.0 # don't want secondary task to influence qdots of 
+        # qdot2[1,0] = 0.0 # prismatic joints
         xrdot = np.vstack((vd, wd)) + self.lam2 * np.vstack((ep, eR))
 
         # Compute velocity
