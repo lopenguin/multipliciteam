@@ -116,7 +116,30 @@ class Generator:
     '''
     def update_asteroid(self, t, dt):
         # only change path when not catching asteroid
-        print("Spawning asteroid!")
+        if (self.asteroid.get_real_position()[2] < -0.5):
+            r = np.random.random()
+            if (r < 0.2):
+                print("We're seeing a bit of a crater here..")
+            elif (r < 0.4):
+                print(":(")
+            elif (r < 0.6):
+                print("Ow! You can catch better than that!")
+            elif (r < 0.8):
+                print("That one hit Joe!")
+            else:
+                print("My cow!")
+        else:
+            r = np.random.random()
+            if (r < 0.2):
+                print("Masterful catch!")
+            elif (r < 0.4):
+                print("Disaster avoided!")
+            elif (r < 0.6):
+                print("Adios asteroid!")
+            elif (r < 0.8):
+                print("What asteroid?")
+            else:
+                print("Well done!")
         self.asteroid.remove()
         # clear out segments and segment index
         self.segments = []
@@ -125,6 +148,7 @@ class Generator:
         # generate an asteroid to catch. Future implementation may just
         # select an already created asteroid here.
         self.asteroid = Asteroid(self.asteroid_handler, self.arm_length, t)
+        print("\nAsteroid approaching!! ＼(º □ º l|l)/")
 
         # Spline to the position and speed of the first reachable intersection point
         # TODO: select the first "reachable" asteroid using a spline with

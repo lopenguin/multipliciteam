@@ -18,9 +18,9 @@
       <uri>model://sun</uri>
     </include>
     <!-- A ground plane -->
-    <include>
+    <!-- <include>
       <uri>model://ground_plane</uri>
-    </include>
+    </include> -->
 
     <!-- You can add other models.  Either indirectly (including -->
     <!-- a model file) or directly (using the <model> tag)!      -->

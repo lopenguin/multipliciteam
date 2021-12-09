@@ -278,6 +278,10 @@ class Asteroid:
         n = v / np.linalg.norm(v)
         return n;
 
+
+    def get_real_position(self):
+        return self.handler.get_asteroid_position(self.id)
+
     '''
     Deletes asteroid when object is destroyed.
     '''

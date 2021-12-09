@@ -1,0 +1,80 @@
+<launch>
+  <!-- You can overwrite these arguments from the commmand line. -->
+
+  <!-- These are arguments for Gazebo.  Select a world, for example:
+    <arg name="world_name" default="$(find hw56code)/worlds/stuff.world"/>
+    <arg name="world_name" default="$(find hw56code)/worlds/slowtime.world"/>
+    <arg name="world_name" default="$(find hw56code)/worlds/realtime.world"/>
+  -->
+  <arg name="paused"     default="true"/>
+  <arg name="world_name" default="$(find arm_game)/worlds/realtime.world"/>
+
+  <!-- URDF file parameter. -->
+  <!-- <arg name="model" default="$(find arm_game)/urdf/kuka_new.urdf"/> -->
+
+  <!-- The control parameters, stored in the YAML file.  -->
+  <arg name="control_parameters"
+       default="$(find arm_game)/config/kuka_control_parameters.yaml"/>
+
+
+  <!-- Load the URDF into the ROS Parameter Server -->
+  <!-- <param name="robot_description" textfile="$(arg model)"/> -->
+  <!-- Load the robot into the world -->
+  <arg name="hardware_interface" default="PositionJointInterface"/>
+  <arg name="load_base" default="false" />
+  <arg name="load_ati_sensor" default="false" />
+  <arg name="load_calib_tool" default="false" />
+  <arg name="load_handle" default="false" />
+  <arg name="load_head_cam" default="false" />
+  <arg name="load_screwdriver" default="false" />
+  <arg name="load_table" default="false" />
+  <arg name="load_gazebo_ros_control" default="true" />
+  <arg name="robot_name" default="iiwa7"/>
+
+  <param name="robot_description"
+      command="$(find xacro)/xacro --inorder '$(find arm_game)/urdf/iiwa7.urdf.xacro'
+      hardware_interface:=$(arg hardware_interface)
+      robot_name:=$(arg robot_name)
+      load_gazebo_ros_control:=$(arg load_gazebo_ros_control)" />
+
+  <!-- Load the controller parameters -->
+  <rosparam command="load" file="$(arg control_parameters)"/>
+
+
+  <!-- Launch Gazebo with the given world, via the standard   -->
+  <!-- empty_world launch file to inherit the other defaults. -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name"   value="$(arg world_name)"/>
+    <arg name="paused"       value="$(arg paused)"/>
+    <arg name="gui"          value="true"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="headless"     value="false"/>
+    <arg name="debug"        value="false"/>
+  </include>
+
+  <!-- Service call to gazebo_ros to spawn a URDF robot -->
+  <node pkg ="gazebo_ros"
+	type="spawn_model"
+	name="robot_spawner"
+	respawn="false"
+	output="screen"
+	args="-urdf -model kuka -param robot_description"/>
+
+  <!-- Load the controllers. -->
+  <node pkg ="controller_manager"
+	type="spawner"
+	name="controller_manager"
+	respawn="false"
+	output="screen"
+	ns="/iiwa7"
+	args="joint_state_publisher j1_setposition j2_setposition j3_setposition j4_setposition j5_setposition j6_setposition j7_setposition"/>
+
+
+    <!-- Start the trajectory demo -->
+    <!-- <node pkg ="arm_game"
+      type="quasi-static_traj_gen.py"
+      name="trajectory"
+      output="screen"
+      required="true">
+    </node> -->
+</launch>
